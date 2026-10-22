@@ -1,3 +1,51 @@
+export const DEMO_INITIAL_COURIERS: User[] = [
+  {
+    id: 'demo_courier_1',
+    name: 'Marcos Oliveira (Piloto Demo 1)',
+    phone: '11990001111',
+    role: 'COURIER',
+    isActive: true,
+    vehiclePlate: 'DEM-0001',
+    vehicleModel: 'CG 160 Fan',
+    pixKeyType: 'PHONE',
+    pixKey: '11990001111',
+    accessToken: 'mb_demo_marcos',
+    activePin: '112233',
+    authPin2FA: '112233',
+    createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+  },
+  {
+    id: 'demo_courier_2',
+    name: 'Alexandre Souza (Piloto Demo 2)',
+    phone: '11990002222',
+    role: 'COURIER',
+    isActive: true,
+    vehiclePlate: 'DEM-0002',
+    vehicleModel: 'Titan 160',
+    pixKeyType: 'CPF',
+    pixKey: '12345678900',
+    accessToken: 'mb_demo_alexandre',
+    activePin: '223344',
+    authPin2FA: '223344',
+    createdAt: new Date(Date.now() - 25 * 86400000).toISOString(),
+  },
+  {
+    id: 'demo_courier_3',
+    name: 'Gabriel Santos (Piloto Demo 3)',
+    phone: '11990003333',
+    role: 'COURIER',
+    isActive: true,
+    vehiclePlate: 'DEM-0003',
+    vehicleModel: 'Fazer 250',
+    pixKeyType: 'EMAIL',
+    pixKey: 'gabriel.demo@entregueja.com.br',
+    accessToken: 'mb_demo_gabriel',
+    activePin: '334455',
+    authPin2FA: '334455',
+    createdAt: new Date(Date.now() - 20 * 86400000).toISOString(),
+  },
+];
+
 import {
   User,
   Delivery,
@@ -1106,6 +1154,7 @@ export async function fetchCourierFromServer(token: string): Promise<{ courier: 
   } catch (e) {
     // Network error
   }
+
   return null;
 }
 
@@ -1153,6 +1202,26 @@ export function findCourierAcrossAllSources(tokenOrId: string): { courier: User;
     };
   }
 
+  // 4. Procurar nos couriers do ambiente Demo
+  try {
+    const rawDemo = typeof window !== 'undefined' ? localStorage.getItem('tenant_demo_users') : null;
+    const demoUsers: User[] = rawDemo ? JSON.parse(rawDemo) : DEMO_INITIAL_COURIERS;
+    const demoMatch = demoUsers.find(
+      (u) => u.accessToken === clean || u.id === clean
+    );
+    if (demoMatch) {
+      const rawDemoDel = typeof window !== 'undefined' ? localStorage.getItem('tenant_demo_deliveries') : null;
+      const demoDeliveries: Delivery[] = rawDemoDel ? JSON.parse(rawDemoDel) : [];
+      return {
+        courier: demoMatch,
+        tenantSlug: 'demo',
+        deliveries: demoDeliveries,
+      };
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
   return null;
 }
 
@@ -1178,6 +1247,16 @@ export function getLatestCourier(courierId: string, accessToken?: string): User 
     (u) => u.id === courierId || (accessToken && u.accessToken === accessToken)
   );
   if (globalMatch) return globalMatch;
+
+  // Checa nos couriers Demo
+  try {
+    const rawDemo = typeof window !== 'undefined' ? localStorage.getItem('tenant_demo_users') : null;
+    const demoUsers: User[] = rawDemo ? JSON.parse(rawDemo) : DEMO_INITIAL_COURIERS;
+    const demoMatch = demoUsers.find(
+      (u) => u.id === courierId || (accessToken && u.accessToken === accessToken)
+    );
+    if (demoMatch) return demoMatch;
+  } catch (e) {}
 
   return (
     DEFAULT_USERS.find(

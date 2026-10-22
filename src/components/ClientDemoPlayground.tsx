@@ -26,7 +26,7 @@ import {
   ThermalPrinterSettings,
 } from '../types';
 import { playNewOrderChime, playDispatchSuccessChime } from '../services/soundEffects';
-import { loadPlatformConfig, loadPrinterSettings, savePrinterSettings } from '../services/storage';
+import { loadPlatformConfig, loadPrinterSettings, savePrinterSettings, DEMO_INITIAL_COURIERS, syncTenantToServer } from '../services/storage';
 
 interface ClientDemoPlaygroundProps {
   onBackToHome: () => void;
@@ -81,53 +81,6 @@ const DEMO_INITIAL_RATE_RANGES: DeliveryRateRange[] = [
   { id: 'demo_rr_4', minKm: 8.1, maxKm: 12.0, price: 18.0, description: 'Regiões Distantes (Perdizes / Moema)', isActive: true, orderIndex: 4 },
 ];
 
-const DEMO_INITIAL_COURIERS: User[] = [
-  {
-    id: 'demo_courier_1',
-    name: 'Marcos Oliveira (Piloto Demo 1)',
-    phone: '11990001111',
-    role: 'COURIER',
-    isActive: true,
-    vehiclePlate: 'DEM-0001',
-    vehicleModel: 'CG 160 Fan',
-    pixKeyType: 'PHONE',
-    pixKey: '11990001111',
-    accessToken: 'mb_demo_marcos',
-    activePin: '112233',
-    authPin2FA: '112233',
-    createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-  },
-  {
-    id: 'demo_courier_2',
-    name: 'Alexandre Souza (Piloto Demo 2)',
-    phone: '11990002222',
-    role: 'COURIER',
-    isActive: true,
-    vehiclePlate: 'DEM-0002',
-    vehicleModel: 'Titan 160',
-    pixKeyType: 'CPF',
-    pixKey: '12345678900',
-    accessToken: 'mb_demo_alexandre',
-    activePin: '223344',
-    authPin2FA: '223344',
-    createdAt: new Date(Date.now() - 25 * 86400000).toISOString(),
-  },
-  {
-    id: 'demo_courier_3',
-    name: 'Gabriel Santos (Piloto Demo 3)',
-    phone: '11990003333',
-    role: 'COURIER',
-    isActive: true,
-    vehiclePlate: 'DEM-0003',
-    vehicleModel: 'Fazer 250',
-    pixKeyType: 'EMAIL',
-    pixKey: 'gabriel.demo@entregueja.com.br',
-    accessToken: 'mb_demo_gabriel',
-    activePin: '334455',
-    authPin2FA: '334455',
-    createdAt: new Date(Date.now() - 20 * 86400000).toISOString(),
-  },
-];
 
 const buildDemoInitialDeliveries = (): Delivery[] => {
   const now = Date.now();
@@ -390,8 +343,36 @@ export const ClientDemoPlayground: React.FC<ClientDemoPlaygroundProps> = ({
   // Estado idêntico ao de uma loja real em produção
   const [storeConfig, setStoreConfig] = useState<StoreConfig>(DEMO_INITIAL_STORE_CONFIG);
   const [rateRanges, setRateRanges] = useState<DeliveryRateRange[]>(DEMO_INITIAL_RATE_RANGES);
-  const [users, setUsers] = useState<User[]>(DEMO_INITIAL_COURIERS);
-  const [deliveries, setDeliveries] = useState<Delivery[]>(buildDemoInitialDeliveries);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('tenant_demo_users') : null;
+      return raw ? JSON.parse(raw) : DEMO_INITIAL_COURIERS;
+    } catch {
+      return DEMO_INITIAL_COURIERS;
+    }
+  });
+  const [deliveries, setDeliveries] = useState<Delivery[]>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('tenant_demo_deliveries') : null;
+      return raw ? JSON.parse(raw) : buildDemoInitialDeliveries();
+    } catch {
+      return buildDemoInitialDeliveries();
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('tenant_demo_users', JSON.stringify(users));
+      syncTenantToServer('demo', undefined, users);
+    } catch (e) {}
+  }, [users]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('tenant_demo_deliveries', JSON.stringify(deliveries));
+      syncTenantToServer('demo', undefined, undefined, deliveries);
+    } catch (e) {}
+  }, [deliveries]);
   const [settlements, setSettlements] = useState<WeeklySettlement[]>([]);
   const [addressCache, setAddressCache] = useState<AddressCacheItem[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<WebhookLogItem[]>([]);

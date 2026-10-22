@@ -67,4 +67,9 @@ test.describe('Cenário 2: Autenticação do Motoboy via Token e PIN de 6 Dígit
     await page.goto(`/?motoToken=${MOTOBOY_TOKEN}&pin=${VALID_PIN}`);
     await expect(page.getByText(/Ganhos a Receber|Entregas em Rota/i).first()).toBeVisible({ timeout: 10000 });
   });
+  test('Deve carregar o motoboy demo Alexandre e liberar o painel com PIN 223344', async ({ page }) => {
+    await page.goto('/?motoToken=mb_demo_alexandre&pin=223344');
+    await expect(page.getByText('Alexandre Souza (Piloto Demo 2)')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Ganhos a Receber|Entregas em Rota/i).first()).toBeVisible();
+  });
 });
