@@ -1,0 +1,6 @@
+{
+  "summary":  "Plano de criação do README.md completo e de padrão profissional para o repositório GitHub do EntregueJá SaaS. Abrange visão geral do produto, badges de status e stack, diagramas de arquitetura ASCII, funcionalidades chave (Balcão, Impressão Térmica, Portal do Motoboy 2FA, APIs de Delivery e Fechamento Semanal), guia rápido de instalação e execução, suíte de testes (Vitest + Playwright) e boas práticas de implantação.",
+  "updatedAt":  "2026-10-22T16:07:52.450378774Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #0f172a;
+    background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .dark body,
+  body.dark {
+    color: #f1f5f9;
+    background-color: #0b0f17;
+  }
+
+  .font-mono-numbers {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom scrollbar utility for mobile horizontal nav */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Polished global dark theme adaptations */
+.dark .bg-white {
+  background-color: #0f172a !important;
+}
+.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+.dark .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+.dark .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+.dark .border-slate-200 {
+  border-color: #1e293b !important;
+}
+.dark .border-slate-100 {
+  border-color: #1e293b !important;
+}
+.dark .border-slate-300 {
+  border-color: #334155 !important;
+}
+.dark .bg-slate-50 {
+  background-color: #090d16 !important;
+}
+.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+.dark .bg-slate-200 {
+  background-color: #334155 !important;
+}
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e293b !important;
+}
+.dark input,
+.dark select,
+.dark textarea {
+  color-scheme: dark;
+}
