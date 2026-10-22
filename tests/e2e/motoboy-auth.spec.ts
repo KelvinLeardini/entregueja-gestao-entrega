@@ -63,4 +63,8 @@ test.describe('Cenário 2: Autenticação do Motoboy via Token e PIN de 6 Dígit
     await expect(page.getByText('Portal do Motoboy · 2FA')).not.toBeVisible({ timeout: 6000 });
     await expect(page.getByText(/Ganhos a Receber|Entregas em Rota/i).first()).toBeVisible();
   });
+  test('Deve liberar o painel automaticamente quando o link exclusivo contiver o PIN embutido', async ({ page }) => {
+    await page.goto(`/?motoToken=${MOTOBOY_TOKEN}&pin=${VALID_PIN}`);
+    await expect(page.getByText(/Ganhos a Receber|Entregas em Rota/i).first()).toBeVisible({ timeout: 10000 });
+  });
 });

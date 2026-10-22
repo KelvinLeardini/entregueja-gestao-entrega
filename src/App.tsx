@@ -63,6 +63,7 @@ import {
   saveTenantScopedUsers,
   saveTenantScopedConfig,
   findCourierAcrossAllSources,
+  fetchCourierFromServer,
 } from './services/storage';
 
 export default function App() {
@@ -87,7 +88,40 @@ export default function App() {
     }
   });
 
-  const urlMotoToken = searchParams.get('motoToken');
+  const urlMotoToken = React.useMemo(() => {
+    const fromSearch = searchParams.get('motoToken') || searchParams.get('token');
+    if (fromSearch) return fromSearch.trim();
+
+    const parts = currentPath.split('?')[0].split('/').filter(Boolean);
+    if ((parts[0] === 'motoboy' || parts[0] === 'portal' || parts[0] === 'entregador') && parts[1]) {
+      return parts[1].trim();
+    }
+    return null;
+  }, [searchParams, currentPath]);
+
+  const urlPin = searchParams.get('pin')?.trim() || null;
+
+  const [remoteCourierData, setRemoteCourierData] = useState<{
+    courier: User;
+    deliveries: Delivery[];
+    tenantSlug?: string;
+  } | null>(null);
+  const [isFetchingRemoteCourier, setIsFetchingRemoteCourier] = useState(false);
+
+  useEffect(() => {
+    if (urlMotoToken && !users.some(u => u.accessToken === urlMotoToken)) {
+      const local = findCourierAcrossAllSources(urlMotoToken);
+      if (!local) {
+        setIsFetchingRemoteCourier(true);
+        fetchCourierFromServer(urlMotoToken).then(res => {
+          if (res) {
+            setRemoteCourierData(res);
+          }
+          setIsFetchingRemoteCourier(false);
+        }).catch(() => setIsFetchingRemoteCourier(false));
+      }
+    }
+  }, [urlMotoToken]);
   const isDevSuperAdmin = searchParams.get('devSuperAdmin') === 'true';
 
   // Identificação do Tenant Ativo se estiver numa rota /[tenantSlug]
@@ -384,28 +418,120 @@ export default function App() {
   // CASO 1: SE O MOTOBOY ACESSOU A PÁGINA COM SEU LINK EXCLUSIVO (?motoToken=...)
   // RENDERIZA EXCLUSIVAMENTE O PORTAL DO MOTOBOY (100% ISOLADO DO BALCÃO E DO ADMIN)
   if (urlMotoToken) {
+    if (isFetchingRemoteCourier) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center p-4">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-semibold text-slate-300">Conectando ao Portal do Motoboy...</p>
+          </div>
+        </div>
+      );
+    }
+
     let matchingCourier = users.find((u) => u.accessToken === urlMotoToken);
     let portalDeliveries = deliveries;
     let courierTenantSlug = activeTenant?.slug;
 
     if (!matchingCourier) {
-      const resolved = findCourierAcrossAllSources(urlMotoToken);
+      const resolved = findCourierAcrossAllSources(urlMotoToken) || remoteCourierData;
       if (resolved) {
         matchingCourier = resolved.courier;
         portalDeliveries = resolved.deliveries;
         courierTenantSlug = resolved.tenantSlug;
       }
     }
+
     if (matchingCourier) {
+      const handleCourierDeliveryConfirm = (deliveryId: string) => {
+        if (courierTenantSlug) {
+          const currentDel = loadTenantScopedData(courierTenantSlug).deliveries;
+          const updatedDel = currentDel.map((d) =>
+            d.id === deliveryId
+              ? {
+                  ...d,
+                  status: 'DELIVERED' as DeliveryStatus,
+                  isFeePayable: true,
+                  deliveredAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                }
+              : d
+          );
+          saveTenantScopedDeliveries(courierTenantSlug, updatedDel);
+          setDeliveries(updatedDel);
+        } else {
+          handleConfirmDeliveryFromMobile(deliveryId);
+        }
+
+        // Sincroniza confirmação com o servidor remoto
+        fetch(`/api/couriers/${encodeURIComponent(urlMotoToken)}/confirm/${deliveryId}`, {
+          method: 'POST',
+        }).catch(() => {});
+      };
+
+      const handleCourierPixUpdate = (
+        courierId: string,
+        pixKeyType: PixKeyType,
+        pixKey: string
+      ) => {
+        if (courierTenantSlug) {
+          const currentU = loadTenantScopedData(courierTenantSlug).users;
+          const updatedU = currentU.map((u) =>
+            u.id === courierId ? { ...u, pixKeyType, pixKey } : u
+          );
+          saveTenantScopedUsers(courierTenantSlug, updatedU);
+          setUsers(updatedU);
+        } else {
+          handleUpdateCourierPix(courierId, pixKeyType, pixKey);
+        }
+
+        fetch(`/api/couriers/${encodeURIComponent(urlMotoToken)}/pix`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pixKeyType, pixKey }),
+        }).catch(() => {});
+      };
+
       return (
         <MotoboyPortalView
           courier={matchingCourier}
           deliveries={portalDeliveries}
-          onConfirmDelivery={handleConfirmDeliveryFromMobile}
-          onUpdateCourierPix={handleUpdateCourierPix}
+          onConfirmDelivery={handleCourierDeliveryConfirm}
+          onUpdateCourierPix={handleCourierPixUpdate}
+          initialPin={urlPin}
         />
       );
     }
+
+    // Se o token foi informado na URL mas não existe no banco/servidor
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center p-4">
+        <div className="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center text-2xl font-bold">
+            🏍️
+          </div>
+          <h1 className="text-lg font-bold text-white">Portal do Motoboy</h1>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            O link de acesso exclusivo não foi localizado no sistema ou ainda não foi sincronizado com este servidor.
+          </p>
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-left">
+            <span className="text-[10px] text-slate-500 block uppercase font-mono">Token:</span>
+            <span className="text-xs font-mono font-bold text-amber-400 break-all">{urlMotoToken}</span>
+          </div>
+          <p className="text-xs text-slate-500">
+            Solicite ao balcão da sua loja para reenviar o seu link atualizado pelo WhatsApp.
+          </p>
+          <div className="pt-2">
+            <button
+              onClick={() => navigateTo('/')}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-colors border border-slate-700"
+            >
+              Ir para o Início
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // CASO 2: ROTA DO SUPER ADMIN DEV EXCLUSIVO (/dev-admin-portal)

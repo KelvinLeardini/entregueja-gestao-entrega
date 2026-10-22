@@ -41,7 +41,7 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : 'https://burgerroute.com';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://burgerroute.com';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,8 +82,11 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleCopyLink = (id: string, token: string) => {
-    const url = `${baseUrl}?motoToken=${token}`;
+  const handleCopyLink = (id: string, token: string, pin?: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = pin
+      ? `${origin}/?motoToken=${token}&pin=${pin}`
+      : `${origin}/?motoToken=${token}`;
     navigator.clipboard.writeText(url);
     setCopiedLinkId(id);
     setTimeout(() => setCopiedLinkId(null), 2000);
@@ -114,9 +117,10 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
 
   const handleShareWhatsApp = (courier: User) => {
     const cleanPhone = courier.phone.replace(/\D/g, '');
-    const url = `${baseUrl}?motoToken=${courier.accessToken}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const pin = courier.activePin || courier.authPin2FA || '123456';
-    const message = `Olá ${courier.name}! Aqui está o seu link de acesso exclusivo às suas entregas na Hamburgueria Vila Guilhermina:\n\n🔗 ${url}\n\n🛡️ Seu código de segurança 2FA: *${pin}*\n\nAbra o link no navegador do celular e digite o código para liberar suas viagens.`;
+    const directUrl = `${origin}/?motoToken=${courier.accessToken}&pin=${pin}`;
+    const message = `Olá ${courier.name}! Aqui está o seu link de acesso exclusivo às suas entregas:\n\n🔗 ${directUrl}\n\n🛡️ Seu código PIN de segurança: *${pin}*\n\nBasta tocar no link para acessar direto suas viagens.`;
     const waUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank');
   };
@@ -255,7 +259,9 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
       {/* Grid de Motoboys Cadastrados */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {couriers.map((courier) => {
-          const personalUrl = `${baseUrl}?motoToken=${courier.accessToken}`;
+          const origin = typeof window !== 'undefined' ? window.location.origin : '';
+          const pin = courier.activePin || courier.authPin2FA || '123456';
+          const personalUrl = `${origin}/?motoToken=${courier.accessToken}&pin=${pin}`;
 
           return (
             <div
@@ -388,25 +394,37 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
                 </div>
 
                 {/* Link Único e Botões de Compartilhar */}
-                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                <div className="grid grid-cols-3 gap-2 pt-0.5">
+                  <a
+                    href={personalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors shadow-xs"
+                    title="Testar e abrir página exclusiva do motoboy em nova aba"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Abrir</span>
+                  </a>
+
                   <button
-                    onClick={() => handleCopyLink(courier.id, courier.accessToken || '')}
-                    className="py-1.5 px-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                    onClick={() => handleCopyLink(courier.id, courier.accessToken || '', courier.activePin || courier.authPin2FA)}
+                    className="py-1.5 px-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors shadow-xs"
+                    title="Copiar link com código PIN embutido para entrada direta com 1 clique"
                   >
                     {copiedLinkId === courier.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedLinkId === courier.id ? 'Link Copiado!' : 'Copiar Link Único'}</span>
+                    <span>{copiedLinkId === courier.id ? 'Copiado!' : 'Copiar'}</span>
                   </button>
 
                   <button
                     onClick={() => handleShareWhatsApp(courier)}
-                    className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                    className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors shadow-xs"
                   >
                     <Share2 className="w-3 h-3" />
                     <span>WhatsApp</span>
                   </button>
                 </div>
 
-                <div className="text-[10px] text-slate-400 text-center truncate font-mono select-all">
+                <div className="text-[10px] text-slate-400 text-center truncate font-mono select-all bg-white dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800">
                   {personalUrl}
                 </div>
               </div>

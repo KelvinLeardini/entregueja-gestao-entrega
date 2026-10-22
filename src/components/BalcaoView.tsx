@@ -399,7 +399,8 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
 
   // Cópia do link exclusivo 2FA do motoboy
   const copyCourierLink = (c: User) => {
-    const url = `${window.location.origin}${window.location.pathname}?motoToken=${c.accessToken || ''}`;
+    const pin = c.activePin || c.authPin2FA || '123456';
+    const url = `${window.location.origin}/?motoToken=${c.accessToken || ''}&pin=${pin}`;
     navigator.clipboard.writeText(url);
     setCopiedCourierId(c.id);
     setTimeout(() => setCopiedCourierId(null), 2500);
@@ -591,12 +592,26 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
                     </a>
                   )}
 
+                  <a
+                    href={`${typeof window !== 'undefined' ? window.location.origin : ''}/?motoToken=${courier.accessToken || ''}&pin=${courier.activePin || courier.authPin2FA || '123456'}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors"
+                    title="Abrir Portal deste Motoboy em nova aba"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+
                   <button
                     onClick={() => copyCourierLink(courier)}
                     className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                    title="Copiar Link Exclusivo 2FA do Entregador"
+                    title={copiedCourierId === courier.id ? 'Link copiado!' : 'Copiar Link com PIN Direto'}
                   >
-                    <Share2 className="w-3.5 h-3.5" />
+                    {copiedCourierId === courier.id ? (
+                      <span className="text-[10px] font-bold text-emerald-600">✓</span>
+                    ) : (
+                      <Share2 className="w-3.5 h-3.5" />
+                    )}
                   </button>
                 </div>
               </div>

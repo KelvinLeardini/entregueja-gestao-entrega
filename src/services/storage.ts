@@ -1044,18 +1044,69 @@ export function loadTenantScopedData(slug: string): {
 
 export function saveTenantScopedDeliveries(slug: string, deliveries: Delivery[]) {
   localStorage.setItem(`tenant_${slug.toLowerCase()}_deliveries`, JSON.stringify(deliveries));
+  syncTenantToServer(slug, undefined, undefined, deliveries);
 }
 
 export function saveTenantScopedUsers(slug: string, users: User[]) {
   localStorage.setItem(`tenant_${slug.toLowerCase()}_users`, JSON.stringify(users));
+  syncTenantToServer(slug, undefined, users);
 }
 
 export function saveTenantScopedConfig(slug: string, config: StoreConfig) {
   localStorage.setItem(`tenant_${slug.toLowerCase()}_config`, JSON.stringify(config));
+  syncTenantToServer(slug, config);
 }
 
 export function saveTenantScopedRates(slug: string, rates: DeliveryRateRange[]) {
   localStorage.setItem(`tenant_${slug.toLowerCase()}_rates`, JSON.stringify(rates));
+}
+
+export function syncTenantToServer(slug: string, config?: StoreConfig, users?: User[], deliveries?: Delivery[], rateRanges?: DeliveryRateRange[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    const scoped = loadTenantScopedData(slug);
+    fetch(`/api/sync/${slug.toLowerCase()}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        config: config || scoped.config,
+        users: users || scoped.users,
+        deliveries: deliveries || scoped.deliveries,
+        rateRanges: rateRanges || scoped.rateRanges,
+      }),
+    }).catch(() => {});
+  } catch (e) {
+    // Ignore network errors in local/offline mode
+  }
+}
+
+export async function fetchCourierFromServer(token: string): Promise<{ courier: User; tenantSlug?: string; deliveries: Delivery[] } | null> {
+  if (typeof window === 'undefined' || !token) return null;
+  try {
+    const res = await fetch(`/api/couriers/${encodeURIComponent(token.trim())}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && data.courier) {
+        const slug = data.tenantSlug || 'hardbeerburguer';
+        const existingUsers = loadTenantScopedData(slug).users;
+        const exists = existingUsers.some((u: User) => u.id === data.courier.id);
+        const updatedUsers = exists
+          ? existingUsers.map((u: User) => (u.id === data.courier.id ? data.courier : u))
+          : [...existingUsers, data.courier];
+        try {
+          localStorage.setItem(`tenant_${slug.toLowerCase()}_users`, JSON.stringify(updatedUsers));
+        } catch (e) {}
+        return {
+          courier: data.courier,
+          tenantSlug: data.tenantSlug,
+          deliveries: data.deliveries || [],
+        };
+      }
+    }
+  } catch (e) {
+    // Network error
+  }
+  return null;
 }
 
 export function findCourierAcrossAllSources(tokenOrId: string): { courier: User; tenantSlug?: string; deliveries: Delivery[] } | null {

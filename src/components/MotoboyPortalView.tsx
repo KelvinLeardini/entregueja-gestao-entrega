@@ -26,6 +26,7 @@ interface MotoboyPortalViewProps {
   onConfirmDelivery: (deliveryId: string) => void;
   onUpdateCourierPix: (courierId: string, pixKeyType: PixKeyType, pixKey: string) => void;
   onExitPortal?: () => void;
+  initialPin?: string | null;
 }
 
 export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
@@ -34,6 +35,7 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
   onConfirmDelivery,
   onUpdateCourierPix,
   onExitPortal,
+  initialPin,
 }) => {
   // Sincroniza sempre os dados mais recentes do motoboy para pegar atualizações imediatas de 2FA
   const [currentCourier, setCurrentCourier] = useState<User>(() => {
@@ -78,7 +80,14 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
     setPinError(null);
   }, [courier.id, courier.accessToken]);
 
-  const [pinInput, setPinInput] = useState('');
+  const [pinInput, setPinInput] = useState(initialPin && initialPin.length === 6 ? initialPin : '');
+
+  // Auto-autentica se o PIN vier embutido no link exclusivo
+  useEffect(() => {
+    if (!is2FAVerified && initialPin && initialPin.length === 6) {
+      validatePinCode(initialPin);
+    }
+  }, [initialPin]);
   const [pinError, setPinError] = useState<string | null>(null);
   const [copiedAddressId, setCopiedAddressId] = useState<string | null>(null);
   const [copiedPix, setCopiedPix] = useState(false);
