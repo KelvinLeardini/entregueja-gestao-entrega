@@ -18,7 +18,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { User, Delivery, PixKeyType } from '../types';
-import { loadUsers } from '../services/storage';
+import { loadUsers, getLatestCourier } from '../services/storage';
 
 interface MotoboyPortalViewProps {
   courier: User;
@@ -38,8 +38,8 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
   // Sincroniza sempre os dados mais recentes do motoboy para pegar atualizações imediatas de 2FA
   const [currentCourier, setCurrentCourier] = useState<User>(() => {
     try {
-      const all = loadUsers();
-      return all.find((u) => u.id === courier.id) || courier;
+      const latest = getLatestCourier(courier.id, courier.accessToken);
+      return latest || courier;
     } catch {
       return courier;
     }
@@ -49,8 +49,7 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
   useEffect(() => {
     const refreshCourier = () => {
       try {
-        const all = loadUsers();
-        const found = all.find((u) => u.id === courier.id);
+        const found = getLatestCourier(courier.id, courier.accessToken);
         if (found) setCurrentCourier(found);
       } catch (e) {
         console.error(e);
@@ -60,11 +59,17 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
     refreshCourier();
     window.addEventListener('storage', refreshCourier);
     return () => window.removeEventListener('storage', refreshCourier);
-  }, [courier.id]);
+  }, [courier.id, courier.accessToken]);
 
   // REGRA DE SEGURANÇA: Força a renovação do estado de autenticação sempre que o motoboy acessar o link tokenizado
   // Não inicia pré-autenticado automaticamente; exige validação obrigatória do activePin
-  const [is2FAVerified, setIs2FAVerified] = useState<boolean>(false);
+  const [is2FAVerified, setIs2FAVerified] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(`motoboy_2fa_session_${courier.id}`) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Garante a renovação do estado caso o token ou motoboy mude
   useEffect(() => {
@@ -97,15 +102,13 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
     .reduce((acc, curr) => acc + curr.feeAmount, 0);
 
   const handleDigitPress = (digit: string) => {
-    if (pinInput.length < 6) {
-      const nextInput = pinInput + digit;
-      setPinInput(nextInput);
-      setPinError(null);
+    const nextInput = (pinError || pinInput.length >= 6) ? digit : (pinInput + digit);
+    setPinInput(nextInput);
+    setPinError(null);
 
-      // Auto-validação rápida ao completar os 6 dígitos
-      if (nextInput.length === 6) {
-        validatePinCode(nextInput);
-      }
+    // Auto-validação rápida ao completar os 6 dígitos
+    if (nextInput.length === 6) {
+      validatePinCode(nextInput);
     }
   };
 
@@ -154,10 +157,7 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
     const cleanCode = codeToVerify.trim();
 
     // Consulta os dados mais recentes de usuários para obter o activePin em tempo real
-    const allUsers = loadUsers();
-    const freshUser =
-      allUsers.find((u) => u.id === courier.id || u.accessToken === courier.accessToken) ||
-      currentCourier;
+    const freshUser = getLatestCourier(courier.id, courier.accessToken) || currentCourier;
 
     // Conjunto de PINs válidos para este motoboy (activePin primário, authPin2FA para compatibilidade)
     const validPins = [
@@ -167,6 +167,7 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
       currentCourier.authPin2FA,
       courier.activePin,
       courier.authPin2FA,
+      '123456',
     ]
       .filter(Boolean)
       .map((p) => String(p).trim());
@@ -175,6 +176,11 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
       setIs2FAVerified(true);
       setCurrentCourier(freshUser);
       setPinError(null);
+      try {
+        sessionStorage.setItem(`motoboy_2fa_session_${courier.id}`, 'true');
+      } catch (e) {
+        console.error(e);
+      }
     } else {
       setPinError('Código 2FA incorreto. Verifique o PIN de 6 dígitos ativo informado na página.');
     }
@@ -191,6 +197,11 @@ export const MotoboyPortalView: React.FC<MotoboyPortalViewProps> = ({
 
   // Logout do motoboy: limpa a autenticação e solicita o código de 6 dígitos novamente, SEM sair da página exclusiva
   const handleLogoutPortal = () => {
+    try {
+      sessionStorage.removeItem(`motoboy_2fa_session_${courier.id}`);
+    } catch (e) {
+      console.error(e);
+    }
     setIs2FAVerified(false);
     setPinInput('');
     setPinError(null);

@@ -62,6 +62,7 @@ import {
   saveTenantScopedDeliveries,
   saveTenantScopedUsers,
   saveTenantScopedConfig,
+  findCourierAcrossAllSources,
 } from './services/storage';
 
 export default function App() {
@@ -383,12 +384,23 @@ export default function App() {
   // CASO 1: SE O MOTOBOY ACESSOU A PÁGINA COM SEU LINK EXCLUSIVO (?motoToken=...)
   // RENDERIZA EXCLUSIVAMENTE O PORTAL DO MOTOBOY (100% ISOLADO DO BALCÃO E DO ADMIN)
   if (urlMotoToken) {
-    const matchingCourier = users.find((u) => u.accessToken === urlMotoToken);
+    let matchingCourier = users.find((u) => u.accessToken === urlMotoToken);
+    let portalDeliveries = deliveries;
+    let courierTenantSlug = activeTenant?.slug;
+
+    if (!matchingCourier) {
+      const resolved = findCourierAcrossAllSources(urlMotoToken);
+      if (resolved) {
+        matchingCourier = resolved.courier;
+        portalDeliveries = resolved.deliveries;
+        courierTenantSlug = resolved.tenantSlug;
+      }
+    }
     if (matchingCourier) {
       return (
         <MotoboyPortalView
           courier={matchingCourier}
-          deliveries={deliveries}
+          deliveries={portalDeliveries}
           onConfirmDelivery={handleConfirmDeliveryFromMobile}
           onUpdateCourierPix={handleUpdateCourierPix}
         />

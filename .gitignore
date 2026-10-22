@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+.vscode/
+playwright-report/
+test-results/

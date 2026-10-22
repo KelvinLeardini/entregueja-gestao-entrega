@@ -23,7 +23,7 @@ test.describe('Cenário 2: Autenticação do Motoboy via Token e PIN de 6 Dígit
     await expect(errorMessage).toBeVisible();
 
     // 5. Garante que o painel interno de entregas não foi desbloqueado
-    await expect(page.getByText('Minhas Entregas')).not.toBeVisible();
+    await expect(page.getByText(/Ganhos a Receber|Entregas em Rota/i)).not.toBeVisible();
   });
 
   test('Deve desbloquear o painel operacional de entregas ao digitar o PIN correto', async ({ page }) => {
@@ -42,7 +42,25 @@ test.describe('Cenário 2: Autenticação do Motoboy via Token e PIN de 6 Dígit
     await expect(page.getByText('Portal do Motoboy · 2FA')).not.toBeVisible({ timeout: 6000 });
 
     // 5. Verifica se as informações financeiras e de rotas do motoboy estão visíveis
-    const myDeliveriesHeader = page.getByText(/Minhas Entregas|Total Acumulado/i);
+    const myDeliveriesHeader = page.getByText(/Ganhos a Receber|Entregas em Rota/i);
     await expect(myDeliveriesHeader.first()).toBeVisible();
+  });
+
+  test('Deve permitir recuperação imediata e login após digitação de PIN incorreto', async ({ page }) => {
+    await page.goto(`/?motoToken=${MOTOBOY_TOKEN}`);
+    await expect(page.getByText('Portal do Motoboy · 2FA')).toBeVisible();
+
+    // 1. Digita PIN incorreto
+    for (const digit of INVALID_PIN) {
+      await page.getByRole('button', { name: digit, exact: true }).click();
+    }
+    await expect(page.getByText(/Código 2FA incorreto/i)).toBeVisible();
+
+    // 2. Digita PIN correto imediatamente (o teclado reseta com o novo dígito sem travar)
+    for (const digit of VALID_PIN) {
+      await page.getByRole('button', { name: digit, exact: true }).click();
+    }
+    await expect(page.getByText('Portal do Motoboy · 2FA')).not.toBeVisible({ timeout: 6000 });
+    await expect(page.getByText(/Ganhos a Receber|Entregas em Rota/i).first()).toBeVisible();
   });
 });

@@ -1028,16 +1028,16 @@ export function loadTenantScopedData(slug: string): {
 
     return {
       config: rawConfig ? JSON.parse(rawConfig) : cleanConfig,
-      users: rawUsers ? JSON.parse(rawUsers) : [],
-      deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : [],
+      users: rawUsers ? JSON.parse(rawUsers) : DEFAULT_USERS,
+      deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : DEFAULT_DELIVERIES,
       rateRanges: rawRates ? JSON.parse(rawRates) : DEFAULT_RATE_RANGES,
     };
   }
 
   return {
     config: rawConfig ? JSON.parse(rawConfig) : loadStoreConfig(),
-    users: rawUsers ? JSON.parse(rawUsers) : [],
-    deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : [],
+    users: rawUsers ? JSON.parse(rawUsers) : DEFAULT_USERS,
+    deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : loadDeliveries(),
     rateRanges: rawRates ? JSON.parse(rawRates) : loadRateRanges(),
   };
 }
@@ -1056,6 +1056,83 @@ export function saveTenantScopedConfig(slug: string, config: StoreConfig) {
 
 export function saveTenantScopedRates(slug: string, rates: DeliveryRateRange[]) {
   localStorage.setItem(`tenant_${slug.toLowerCase()}_rates`, JSON.stringify(rates));
+}
+
+export function findCourierAcrossAllSources(tokenOrId: string): { courier: User; tenantSlug?: string; deliveries: Delivery[] } | null {
+  if (!tokenOrId) return null;
+  const clean = tokenOrId.trim();
+
+  const tenants = loadTenants();
+  for (const tenant of tenants) {
+    try {
+      const scoped = loadTenantScopedData(tenant.slug);
+      const found = scoped.users.find(
+        (u) => u.accessToken === clean || u.id === clean
+      );
+      if (found) {
+        return {
+          courier: found,
+          tenantSlug: tenant.slug,
+          deliveries: scoped.deliveries,
+        };
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  const globalUsers = loadUsers();
+  const globalFound = globalUsers.find(
+    (u) => u.accessToken === clean || u.id === clean
+  );
+  if (globalFound) {
+    return {
+      courier: globalFound,
+      deliveries: loadDeliveries(),
+    };
+  }
+
+  const defaultFound = DEFAULT_USERS.find(
+    (u) => u.accessToken === clean || u.id === clean
+  );
+  if (defaultFound) {
+    return {
+      courier: defaultFound,
+      deliveries: DEFAULT_DELIVERIES,
+    };
+  }
+
+  return null;
+}
+
+export function getLatestCourier(courierId: string, accessToken?: string): User | null {
+  const tenants = loadTenants();
+  for (const tenant of tenants) {
+    try {
+      const raw = localStorage.getItem(`tenant_${tenant.slug.toLowerCase()}_users`);
+      if (raw) {
+        const users: User[] = JSON.parse(raw);
+        const match = users.find(
+          (u) => u.id === courierId || (accessToken && u.accessToken === accessToken)
+        );
+        if (match) return match;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  const globalUsers = loadUsers();
+  const globalMatch = globalUsers.find(
+    (u) => u.id === courierId || (accessToken && u.accessToken === accessToken)
+  );
+  if (globalMatch) return globalMatch;
+
+  return (
+    DEFAULT_USERS.find(
+      (u) => u.id === courierId || (accessToken && u.accessToken === accessToken)
+    ) || null
+  );
 }
 
 

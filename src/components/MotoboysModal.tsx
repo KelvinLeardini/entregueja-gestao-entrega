@@ -50,6 +50,7 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
       return;
     }
 
+    const initialPin = generateCourier2FAPin();
     const newCourier: User = {
       id: `courier_${Date.now()}`,
       name: name.trim(),
@@ -61,8 +62,8 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
       pixKeyType,
       pixKey: pixKey.trim() || undefined,
       accessToken: generateCourierAccessToken(),
-      activePin: generateCourier2FAPin(),
-      authPin2FA: generateCourier2FAPin(),
+      activePin: initialPin,
+      authPin2FA: initialPin,
       createdAt: new Date().toISOString(),
     };
 
@@ -103,8 +104,8 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
     };
     onUpdateCourier(updated);
     try {
-      localStorage.removeItem(`burger_route_2fa_pin_${courier.id}`);
-      localStorage.removeItem(`burger_route_2fa_auth_${courier.id}`);
+      sessionStorage.removeItem(`motoboy_2fa_session_${courier.id}`);
+      window.dispatchEvent(new Event('storage'));
     } catch (e) {
       console.error(e);
     }
