@@ -1051,13 +1051,25 @@ export function loadTenantScopedData(slug: string): {
   rateRanges: DeliveryRateRange[];
 } {
   const prefix = `tenant_${slug.toLowerCase()}_`;
-  const rawUsers = localStorage.getItem(prefix + 'users');
-  const rawDeliveries = localStorage.getItem(prefix + 'deliveries');
-  const rawRates = localStorage.getItem(prefix + 'rates');
-  const rawConfig = localStorage.getItem(prefix + 'config');
+  const purgeKey = `tenant_${slug.toLowerCase()}_initial_clean_applied_v2`;
+  if (typeof window !== 'undefined' && slug.toLowerCase() === 'hardbeerburguer') {
+    if (!localStorage.getItem(purgeKey)) {
+      try {
+        localStorage.removeItem(prefix + 'users');
+        localStorage.removeItem(prefix + 'deliveries');
+        localStorage.setItem(purgeKey, 'true');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
+  const rawUsers = typeof window !== 'undefined' ? localStorage.getItem(prefix + 'users') : null;
+  const rawDeliveries = typeof window !== 'undefined' ? localStorage.getItem(prefix + 'deliveries') : null;
+  const rawRates = typeof window !== 'undefined' ? localStorage.getItem(prefix + 'rates') : null;
+  const rawConfig = typeof window !== 'undefined' ? localStorage.getItem(prefix + 'config') : null;
 
   if (slug.toLowerCase() === 'hardbeerburguer') {
-    // Para a Hard Beer Burguer: limpa dados de teste acumulados caso o usuário queira uma base limpa
     const cleanConfig: StoreConfig = {
       id: 'store_hardbeerburguer',
       storeName: 'Hard Beer Burguer',
@@ -1076,16 +1088,25 @@ export function loadTenantScopedData(slug: string): {
 
     return {
       config: rawConfig ? JSON.parse(rawConfig) : cleanConfig,
-      users: rawUsers ? JSON.parse(rawUsers) : DEFAULT_USERS,
-      deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : DEFAULT_DELIVERIES,
+      users: rawUsers ? JSON.parse(rawUsers) : [],
+      deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : [],
       rateRanges: rawRates ? JSON.parse(rawRates) : DEFAULT_RATE_RANGES,
+    };
+  }
+
+  if (slug.toLowerCase() === 'demo') {
+    return {
+      config: rawConfig ? JSON.parse(rawConfig) : loadStoreConfig(),
+      users: rawUsers ? JSON.parse(rawUsers) : DEMO_INITIAL_COURIERS,
+      deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : loadDeliveries(),
+      rateRanges: rawRates ? JSON.parse(rawRates) : loadRateRanges(),
     };
   }
 
   return {
     config: rawConfig ? JSON.parse(rawConfig) : loadStoreConfig(),
-    users: rawUsers ? JSON.parse(rawUsers) : DEFAULT_USERS,
-    deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : loadDeliveries(),
+    users: rawUsers ? JSON.parse(rawUsers) : [],
+    deliveries: rawDeliveries ? JSON.parse(rawDeliveries) : [],
     rateRanges: rawRates ? JSON.parse(rawRates) : loadRateRanges(),
   };
 }

@@ -257,8 +257,32 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
       )}
 
       {/* Grid de Motoboys Cadastrados */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {couriers.map((courier) => {
+      {couriers.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 mx-auto flex items-center justify-center">
+            <Bike className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Nenhum motoboy cadastrado nesta loja
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">
+              Cadastre seu primeiro entregador para gerar automaticamente o link seguro de visualização de viagens e o código PIN de 6 dígitos.
+            </p>
+          </div>
+          {!showAddForm && (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Cadastrar Primeiro Motoboy</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {couriers.map((courier) => {
           const origin = typeof window !== 'undefined' ? window.location.origin : '';
           const pin = courier.activePin || courier.authPin2FA || '123456';
           const personalUrl = `${origin}/?motoToken=${courier.accessToken}&pin=${pin}`;
@@ -431,7 +455,8 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

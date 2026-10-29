@@ -604,30 +604,14 @@ export default function App() {
             rateRanges={rateRanges}
             addressCache={addressCache}
             printerSettings={printerSettings}
+            isDemo={false}
             onAddDelivery={handleAddDelivery}
             onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
             onUpdateAddressCache={handleUpdateAddressCache}
           />
         )}
 
-        {activeTab === 'api_webhook' && currentAuthRole === 'ADMIN' && (
-          <WebhookSimulatorView
-            storeConfig={storeConfig}
-            rateRanges={rateRanges}
-            couriers={couriers}
-            deliveries={deliveries}
-            addressCache={addressCache}
-            webhookLogs={webhookLogs}
-            platformConfig={platformConfig}
-            onUpdatePlatformConfig={setPlatformConfig}
-            onAddDelivery={handleAddDelivery}
-            onUpdateDelivery={handleUpdateDelivery}
-            onUpdateCache={handleUpdateAddressCache}
-            onAddLog={handleAddWebhookLog}
-          />
-        )}
-
-        {activeTab === 'fechamento' && currentAuthRole === 'ADMIN' && (
+        {activeTab === 'fechamento' && (
           <FechamentoSemanalView
             couriers={couriers}
             deliveries={deliveries}
@@ -637,7 +621,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'motoboys' && currentAuthRole === 'ADMIN' && (
+        {activeTab === 'motoboys' && (
           <MotoboysView
             couriers={couriers}
             onAddCourier={handleAddCourier}
@@ -646,21 +630,12 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'taxas' && currentAuthRole === 'ADMIN' && (
+        {activeTab === 'taxas' && (
           <TabelaTaxasView
             rateRanges={rateRanges}
             storeConfig={storeConfig}
             onSaveRateRanges={setRateRanges}
             onSaveStoreConfig={setStoreConfig}
-          />
-        )}
-
-        {activeTab === 'escopo' && currentAuthRole === 'ADMIN' && (
-          <ScopeDocumentationView
-            deliveries={deliveries}
-            couriers={couriers}
-            rateRanges={rateRanges}
-            storeConfig={storeConfig}
           />
         )}
       </main>

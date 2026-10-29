@@ -505,6 +505,7 @@ export const ClientDemoPlayground: React.FC<ClientDemoPlaygroundProps> = ({
             rateRanges={rateRanges}
             addressCache={addressCache}
             printerSettings={printerSettings}
+            isDemo={true}
             onAddDelivery={handleAddDelivery}
             onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
             onUpdateAddressCache={handleUpdateAddressCache}

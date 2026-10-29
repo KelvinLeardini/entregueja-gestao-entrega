@@ -55,6 +55,7 @@ interface BalcaoViewProps {
   rateRanges: DeliveryRateRange[];
   addressCache: AddressCacheItem[];
   printerSettings?: ThermalPrinterSettings;
+  isDemo?: boolean;
   onAddDelivery: (delivery: Delivery) => void;
   onUpdateDeliveryStatus: (
     id: string,
@@ -73,6 +74,7 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
   rateRanges,
   addressCache,
   printerSettings,
+  isDemo = false,
   onAddDelivery,
   onUpdateDeliveryStatus,
   onUpdateAddressCache,
@@ -494,8 +496,19 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
         </div>
 
         {/* Grade de Motoboys com Status e Pedidos Ativos */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3">
-          {couriers.map((courier) => {
+        {couriers.length === 0 ? (
+          <div className="py-6 px-4 text-center rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-800 mt-3">
+            <Bike className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-60" />
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Nenhum motoboy cadastrado no momento
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-md mx-auto">
+              Cadastre seus entregadores na aba "Motoboys & 2FA" para despachar pedidos e gerar os links de acesso seguro com código PIN de 6 dígitos.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3">
+            {couriers.map((courier) => {
             const activeCount = deliveries.filter(
               (d) => d.courierId === courier.id && d.status === 'IN_TRANSIT'
             ).length;
@@ -617,46 +630,51 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ============================================================ */}
       {/* 2. BARRA DE CONTROLE: SIMULADOR, MODO KANBAN / LISTA E BUSCA */}
       {/* ============================================================ */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
-        {/* Lado Esquerdo: Simulação de Pedidos com Som */}
+        {/* Lado Esquerdo: Simulação de Pedidos com Som (apenas no modo Demo) */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mr-1">
-            <Sparkles className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
-            <span>Chegar Pedido:</span>
-          </div>
+          {isDemo && (
+            <>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mr-1">
+                <Sparkles className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
+                <span>Chegar Pedido:</span>
+              </div>
 
-          <button
-            type="button"
-            onClick={() => handleSimulatePlatformArrival('IFOOD')}
-            className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-all shadow-2xs active:scale-95 flex items-center gap-1"
-            title="Simula chegada de um novo pedido do iFood"
-          >
-            <span>+ Chegou iFood</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => handleSimulatePlatformArrival('IFOOD')}
+                className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+                title="Simula chegada de um novo pedido do iFood"
+              >
+                <span>+ Chegou iFood</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => handleSimulatePlatformArrival('99FOOD')}
-            className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-2xs active:scale-95 flex items-center gap-1"
-            title="Simula chegada de um novo pedido do 99Food"
-          >
-            <span>+ Chegou 99Food</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => handleSimulatePlatformArrival('99FOOD')}
+                className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+                title="Simula chegada de um novo pedido do 99Food"
+              >
+                <span>+ Chegou 99Food</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => handleSimulatePlatformArrival('KEETA')}
-            className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 transition-all shadow-2xs active:scale-95 flex items-center gap-1 font-extrabold"
-            title="Simula chegada de um novo pedido do Keeta"
-          >
-            <span>+ Chegou Keeta</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => handleSimulatePlatformArrival('KEETA')}
+                className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 transition-all shadow-2xs active:scale-95 flex items-center gap-1 font-extrabold"
+                title="Simula chegada de um novo pedido do Keeta"
+              >
+                <span>+ Chegou Keeta</span>
+              </button>
+            </>
+          )}
 
           {/* Botão de Som Liga/Desliga */}
           <button

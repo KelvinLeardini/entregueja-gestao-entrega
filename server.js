@@ -208,14 +208,16 @@ if (fs.existsSync(DB_FILE)) {
   }
 }
 
-// Garante que os couriers padrão sempre existam no índice
+// Garante que os couriers de demonstração existam no ambiente demo
 for (const sc of SEED_COURIERS) {
-  if (!db.couriers[sc.accessToken]) {
-    db.couriers[sc.accessToken] = {
-      courier: sc,
-      tenantSlug: 'hardbeerburguer',
-      deliveries: SEED_DELIVERIES.filter(d => d.courierId === sc.id),
-    };
+  if (sc.id.startsWith('demo_')) {
+    if (!db.couriers[sc.accessToken]) {
+      db.couriers[sc.accessToken] = {
+        courier: sc,
+        tenantSlug: 'demo',
+        deliveries: SEED_DELIVERIES.filter(d => d.courierId === sc.id),
+      };
+    }
   }
 }
 
