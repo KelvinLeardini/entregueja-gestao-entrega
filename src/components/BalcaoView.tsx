@@ -29,6 +29,7 @@ import {
   Eye,
   X,
   Printer,
+  FileSpreadsheet,
 } from 'lucide-react';
 import {
   Delivery,
@@ -65,6 +66,7 @@ interface BalcaoViewProps {
     cancellationReason?: string
   ) => void;
   onUpdateAddressCache: (item: AddressCacheItem) => void;
+  onNavigateToHistorico?: () => void;
 }
 
 export const BalcaoView: React.FC<BalcaoViewProps> = ({
@@ -78,6 +80,7 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
   onAddDelivery,
   onUpdateDeliveryStatus,
   onUpdateAddressCache,
+  onNavigateToHistorico,
 }) => {
   const customFeeInputId = useId();
 
@@ -719,6 +722,18 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
               <List className="w-3.5 h-3.5" />
               <span>Tabela Geral</span>
             </button>
+
+            {onNavigateToHistorico && (
+              <button
+                type="button"
+                onClick={onNavigateToHistorico}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
+                title="Abrir Histórico completo e Conferência de Caixa"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-amber-500" />
+                <span>Histórico & Caixa</span>
+              </button>
+            )}
           </div>
 
           <button
@@ -1504,9 +1519,21 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
                 </span>
               </div>
 
-              <span className="text-[11px] text-slate-400 font-mono">
-                Histórico
-              </span>
+              {onNavigateToHistorico ? (
+                <button
+                  type="button"
+                  onClick={onNavigateToHistorico}
+                  className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:underline flex items-center gap-1 transition-colors"
+                  title="Ver histórico analítico por período e conferência de caixa"
+                >
+                  <FileSpreadsheet className="w-3 h-3" />
+                  <span>Conferência de Caixa →</span>
+                </button>
+              ) : (
+                <span className="text-[11px] text-slate-400 font-mono">
+                  Histórico
+                </span>
+              )}
             </div>
 
             {/* Lista de Cards da Coluna 3 */}

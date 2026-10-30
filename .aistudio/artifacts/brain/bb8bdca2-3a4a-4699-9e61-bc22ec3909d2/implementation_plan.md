@@ -1,77 +1,137 @@
-# Higienização de URL e Rolagem Suave na Landing Page
+# Nova Aba 'Histórico & Conferência de Caixa' no Balcão
 
-Eliminar o fragmento residual `/#solucao` na página principal e garantir que a página sempre carregue limpa no topo (`/`), mantendo a navegação da Landing Page fluida e com rolagem suave (*smooth scroll*), sem alterar nem poluir a barra de endereços do navegador.
+Implementação de uma aba dedicada de **Histórico de Entregas e Conferência de Caixa** integrada ao painel do balcão e à navegação principal da loja, permitindo aos operadores e gerentes auditar entregas concluídas por período, totalizar taxas pagas a motoboys, conferir valores e volumes recebidos, além de exportar dados em CSV e emitir relatórios impressos para fechamento de caixa.
 
 ---
 
 ## Decisões Confirmadas com o Usuário
 
 > [!IMPORTANT]
-> - **Limpeza Automática da URL**: Na inicialização da página inicial (`LandingPage`), se houver qualquer hash na URL (como `/#solucao`), ele será automaticamente removido via `window.history.replaceState` sem recarregar a página, garantindo que o usuário veja a URL limpa `/` e a página abra sempre no topo (Hero banner).
-> - **Rolagem Suave sem Alterar o Endereço**: Os botões do menu superior e do rodapé (Solução, Como Funciona, Simulador ROI, Planos e Dúvidas) continuarão executando `scrollIntoView({ behavior: 'smooth' })`, porém sem adicionar tags hash à URL no navegador.
+> - **Filtros de Período**: Seletores rápidos para **Hoje**, **Últimos 7 dias** e **Últimos 30 dias**, com data/hora precisa e filtragem em tempo real sobre entregas finalizadas (`DELIVERED`, `CANCELED_AFTER_DELIVERY` com taxa devida, e canceladas pré-saída).
+> - **Métricas de Caixa e Conferência**:
+>   1. **Total de Taxas de Motoboys** (valor acumulado de diárias/taxas por entrega devidas aos entregadores).
+>   2. **Quantidade Total de Pedidos Concluídos** (com taxa de entrega bem-sucedida vs cancelamentos).
+>   3. **Volume Financeiro dos Pedidos** (total faturado em mercadorias e breakdown entre pagamentos online vs valores cobrados no destino pelo motoboy).
+> - **Exportação e Impressão**:
+>   1. **Exportar CSV**: Download direto com dados tabulares estruturados (Data/Hora, Nº Pedido, Canal, Motoboy, Cliente, Bairro, Forma de Pagamento, Valor Pedido, Taxa Motoboy, Status).
+>   2. **Impressão de Relatório de Caixa**: Layout limpo e otimizado para conferência física (folha A4 ou bobina térmica 80mm), perfeito para conferência de gaveta e acerto de turno.
 
 ---
 
 ## 1. Visão Geral e Conceito
 
-### Causa Raiz do `/#solucao`
-- A seção de benefícios da Landing Page possui o atributo `id="solucao"`.
-- Quando um link com âncora era acionado ou uma URL continha `#solucao`, o navegador preservava essa âncora no histórico e, ao atualizar a página, rolava automaticamente para o meio da tela na seção de dores em vez de exibir a manchete principal.
+### O Problema do Operador de Balcão
+Atualmente, no pico do turno, a coluna de "Concluídos" no Kanban ou na tabela geral lista apenas as entregas correntes sem filtros por período retroativo (7 ou 30 dias) e sem um painel de soma financeira direta para conferência de caixa. Ao fechar o caixa ou conferir o dinheiro que retornou com os motoboys, o operador precisa fazer contas manuais.
 
-### Solução Proposta
-1. **Higienização de Inicialização**: Um `useEffect` no carregamento da página raiz detecta a presença de qualquer âncora (`window.location.hash`) e a limpa com `window.history.replaceState(null, '', window.location.pathname + window.location.search)`, reposicionando suavemente o scroll no topo se o acesso foi direto à raiz.
-2. **Garantia de Rolagem Neutra nos Botões**: As funções de rolagem (`handleScrollToSection`) continuam guiando o visitante suavemente até as seções desejadas sem injetar tags `#` na barra de endereços.
+### A Solução
+Uma visão analítica e operacional completa com:
+1. **Cards de Consolidação de Caixa**: Indicadores em tempo real do período selecionado (Volume Bruto, Total em Taxas de Entrega, Saldo em Dinheiro a Cobrar no Balcão, Entregas Concluídas).
+2. **Tabela Analítica de Entregas Concluídas**: Linhas densas, alinhamento tabular (`tabular-nums`), pesquisa instantânea por cliente, pedido ou motoboy, e filtro por canal de venda (iFood, 99Food, Keeta, Balcão).
+3. **Agrupamento por Motoboy**: Resumo de quantas viagens cada motoboy realizou no período e o subtotal exato de taxas a acertar.
+4. **Exportação & Impressão**: Botões utilitários de 1 clique para gerar planilha (.csv) e abrir o diálogo de impressão de comprovante de fechamento de caixa.
 
 ---
 
-## 2. Diagrama de Fluxo de Navegação
+## 2. Experiência do Usuário e Design Visual
+
+### Navegação e Pontos de Acesso
+- **No Header Principal**: Adicionada a aba `Histórico & Caixa` na barra de categorias da loja, visível tanto no perfil Administrador quanto no perfil Balcão (`adminOnly: false`).
+- **No Painel do Balcão (`BalcaoView`)**: Um botão de atalho rápido na barra superior de controles ("Ir para Histórico & Caixa"), permitindo transição com 1 clique sem perder o contexto operacional.
+
+### Layout e Estética (Diretrizes SaaS & Dashboard)
+- **Zero-Pill Discipline**: Tipografia limpa com separadores sutis (`·`), sem tags em cápsula desnecessárias.
+- **Tabular Figures**: Todos os valores monetários (`R$ 0,00`), percentuais e contadores formatados com `tabular-nums font-mono` para alinhamento vertical perfeito.
+- **Micro-Interações e Responsividade**: Design adaptativo para telas grandes de balcão (1440px) e tablets/telas menores de caixa (compactação elegante em cards no mobile).
+
+---
+
+## 3. Arquitetura Técnica e Fluxo de Dados
 
 ```
-        Visitante acessa a Landing Page (com ou sem hash residual)
-                                  │
-                                  ▼
-      ┌────────────────────────────────────────────────────────┐
-      │  Detecta se existe hash na URL (ex: /#solucao)         │
-      ├────────────────────────────────────────────────────────┤
-      │ • window.history.replaceState() limpa para "/"         │
-      │ • window.scrollTo({ top: 0, behavior: 'instant' })     │
-      └────────────────────────────────────────────────────────┘
-                                  │
-                                  ▼
-                Exibe Hero Section no topo da tela
-                                  │
-                                  ▼
-            Visitante clica em item do menu (ex: "Solução")
-                                  │
-                                  ▼
-      ┌────────────────────────────────────────────────────────┐
-      │  Executa scrollIntoView({ behavior: 'smooth' })        │
-      │  URL PERMANECE LIMPA COMO "/" (sem injetar #)          │
-      └────────────────────────────────────────────────────────┘
+ ┌────────────────────────────────────────────────────────────────────────┐
+ │                              App.tsx                                   │
+ │       deliveries[ ]  ·  couriers[ ]  ·  storeConfig  ·  theme          │
+ └──────────────────────────────────┬─────────────────────────────────────┘
+                                    │
+           ┌────────────────────────┴────────────────────────┐
+           ▼                                                 ▼
+ ┌──────────────────────┐                         ┌──────────────────────┐
+ │      Header.tsx      │                         │  BalcaoView.tsx      │
+ │  Nova aba:           │                         │  Atalho rápido para  │
+ │  "Histórico & Caixa" │                         │  o Histórico         │
+ └─────────┬────────────┘                         └──────────┬───────────┘
+           │                                                 │
+           └────────────────────────┬────────────────────────┘
+                                    ▼
+       ┌────────────────────────────────────────────────────────────┐
+       │             HistoricoConferenciaCaixaView.tsx              │
+       │                                                            │
+       │  ┌──────────────────────────────────────────────────────┐  │
+       │  │ Filtros: [Hoje] [Últimos 7 dias] [Últimos 30 dias]  │  │
+       │  │ Busca por texto + Filtro por Canal (iFood/Keeta/...) │  │
+       │  └──────────────────────────────────────────────────────┘  │
+       │                                                            │
+       │  ┌──────────────────────────────────────────────────────┐  │
+       │  │ KPI Strip:                                           │  │
+       │  │ • Total Taxas Motoboys  • Total de Pedidos           │  │
+       │  │ • Faturamento de Pedidos • Valores a Cobrar em Mãos   │  │
+       │  └──────────────────────────────────────────────────────┘  │
+       │                                                            │
+       │  ┌──────────────────────────────────────────────────────┐  │
+       │  │ Resumo Consolidado por Motoboy (Viagens + Taxa Devida│  │
+       │  └──────────────────────────────────────────────────────┘  │
+       │                                                            │
+       │  ┌──────────────────────────────────────────────────────┐  │
+       │  │ Tabela Detalhada com Ordenação e Paginação           │  │
+       │  └──────────────────────────────────────────────────────┘  │
+       │                                                            │
+       │  ┌──────────────────────────────────────────────────────┐  │
+       │  │ Ações: [📥 Baixar Planilha CSV]  [🖨️ Imprimir Fechamento│
+       │  └──────────────────────────────────────────────────────┘  │
+       └────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Especificação das Modificações Técnicas
+## 4. Estrutura de Implementação por Componente
 
-### 3.1. `src/components/LandingPage.tsx`
-- Adicionar hook `useEffect` na montagem da `LandingPage`:
-  - Se `window.location.hash` existir, limpa com `window.history.replaceState(null, '', window.location.pathname + window.location.search)`.
-  - Garante que a página inicie na coordenada `top: 0` para uma primeira impressão limpa e com a Hero Section visível.
-- Manter `handleScrollToSection` chamando estritamente `element.scrollIntoView({ behavior: 'smooth' })` sem mutação da barra de endereços.
+### 4.1. Novo Componente: `src/components/HistoricoConferenciaCaixaView.tsx`
+- **Filtros Temporais**:
+  - `HOJE`: Entregas realizadas desde as 00:00 do dia atual até as 23:59.
+  - `SETE_DIAS`: Entregas dos últimos 7 dias corridos.
+  - `TRINTA_DIAS`: Entregas dos últimos 30 dias corridos.
+- **Cálculo de Totais**:
+  - `totalTaxas`: Soma de `feeAmount` para entregas onde `isFeePayable` é verdadeiro (`DELIVERED` e `CANCELED_AFTER_DELIVERY`).
+  - `totalPedidos`: Contagem de entregas finalizadas.
+  - `volumePedidos`: Soma de `orderTotal` dos pedidos concluídos.
+  - `valoresCobrarDestino`: Soma de pedidos com pagamento `CASH`, `CARD` ou `PIX` cobrados no ato pelo motoboy (conferência do dinheiro físico).
+- **Exportação CSV**:
+  - Função pura em TypeScript gerando cabeçalhos UTF-8 (`\uFEFF`) e linhas separadas por ponto-e-vírgula (compatível com Excel no Brasil).
+- **Impressão de Conferência**:
+  - Estilização `@media print` dedicada para impressão de comprovante estruturado contendo resumo da loja, período, totais por motoboy e relação de pedidos.
 
-### 3.2. `src/App.tsx`
-- Assegurar que `navigateTo('/')` zere qualquer fragmento no histórico, mantendo a navegação entre a demonstração/lojas e a página inicial perfeitamente limpa.
+### 4.2. Atualização em `src/components/Header.tsx`
+- Adicionar o item `'historico'` à lista `allNavItems` com ícone de histórico/auditoria (`History` ou `FileSpreadsheet`), configurado como `adminOnly: false` para que o operador de caixa no modo Balcão também tenha acesso imediato.
+
+### 4.3. Atualização em `src/App.tsx`
+- Expandir a tipagem de `activeTab` para incluir `'historico'`.
+- Renderizar `<HistoricoConferenciaCaixaView>` quando `activeTab === 'historico'`.
+- Permitir que a navegação do modo Balcão mantenha a permissão de alternar entre o `Balcão Operacional` e o `Histórico & Conferência de Caixa`.
+
+### 4.4. Integração em `src/components/BalcaoView.tsx`
+- Adicionar na barra de ferramentas do balcão um botão de acesso rápido "Histórico & Caixa", permitindo navegar diretamente à conferência.
 
 ---
 
-## 4. Plano de Validação e Verificação
+## 5. Plano de Validação e Testes
 
-1. **Teste de Acesso com Hash**:
-   - Simular acesso à URL `http://localhost:3000/#solucao`.
-   - Verificar se a barra de endereços é sanitizada para `http://localhost:3000/` e a visualização abre no topo da página.
-2. **Teste de Rolagem do Menu**:
-   - Clicar nos botões do menu ("Solução", "Como Funciona", "Simulador ROI", "Planos", "Dúvidas").
-   - Verificar que a rolagem suave acontece perfeitamente e a URL permanece `/` sem adicionar `#`.
-3. **Validação de Compilação**:
-   - Executar `lint_applet` e `compile_applet`.
+1. **Validação de Filtros por Período**:
+   - Alternar entre `Hoje`, `Últimos 7 dias` e `Últimos 30 dias` e confirmar que as listas e métricas são recalculadas com precisão instantânea.
+2. **Validação das Métricas Financeiras**:
+   - Conferir soma de taxas de motoboy (`feeAmount`), contagem de pedidos e volume total (`orderTotal`), conferindo casos de cancelamento pós-saída (onde a taxa permanece devida).
+3. **Validação da Exportação CSV**:
+   - Clicar em "Exportar CSV" e checar se o arquivo `.csv` é baixado com todos os campos preenchidos e codificação adequada.
+4. **Validação da Impressão de Relatório**:
+   - Clicar em "Imprimir Relatório" e validar se a janela de impressão do navegador exibe o formato de conferência limpo sem elementos de interface desnecessários.
+5. **Verificação de Compilação**:
+   - Executar `compile_applet` e garantir 0 erros de TypeScript e integridade visual.

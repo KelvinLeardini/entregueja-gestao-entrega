@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Header } from './Header';
 import { BalcaoView } from './BalcaoView';
 import { FechamentoSemanalView } from './FechamentoSemanalModal';
+import { HistoricoConferenciaCaixaView } from './HistoricoConferenciaCaixaView';
 import { TabelaTaxasView } from './TabelaTaxasModal';
 import { MotoboysView } from './MotoboysModal';
 import { WebhookSimulatorView } from './WebhookSimulatorModal';
@@ -382,7 +383,7 @@ export const ClientDemoPlayground: React.FC<ClientDemoPlaygroundProps> = ({
 
   // Navegação idêntica de abas da loja
   const [activeTab, setActiveTab] = useState<
-    'balcao' | 'fechamento' | 'taxas' | 'motoboys' | 'api_webhook' | 'escopo'
+    'balcao' | 'historico' | 'fechamento' | 'taxas' | 'motoboys' | 'api_webhook' | 'escopo'
   >('balcao');
   const [currentRole, setCurrentRole] = useState<Role>('ADMIN');
   const [currentAuthRole, setCurrentAuthRole] = useState<AuthSessionRole>('ADMIN');
@@ -509,6 +510,16 @@ export const ClientDemoPlayground: React.FC<ClientDemoPlaygroundProps> = ({
             onAddDelivery={handleAddDelivery}
             onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
             onUpdateAddressCache={handleUpdateAddressCache}
+            onNavigateToHistorico={() => setActiveTab('historico')}
+          />
+        )}
+
+        {activeTab === 'historico' && (
+          <HistoricoConferenciaCaixaView
+            deliveries={deliveries}
+            couriers={couriers}
+            storeConfig={storeConfig}
+            onBackToBalcao={() => setActiveTab('balcao')}
           />
         )}
 

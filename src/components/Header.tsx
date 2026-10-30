@@ -11,12 +11,13 @@ import {
   Pill,
   UtensilsCrossed,
   Settings,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Role, ThemeMode, AuthSessionRole, TenantStore } from '../types';
 
 interface HeaderProps {
-  activeTab: 'balcao' | 'fechamento' | 'taxas' | 'motoboys' | 'api_webhook' | 'escopo';
-  setActiveTab: (tab: 'balcao' | 'fechamento' | 'taxas' | 'motoboys' | 'api_webhook' | 'escopo') => void;
+  activeTab: 'balcao' | 'historico' | 'fechamento' | 'taxas' | 'motoboys' | 'api_webhook' | 'escopo';
+  setActiveTab: (tab: 'balcao' | 'historico' | 'fechamento' | 'taxas' | 'motoboys' | 'api_webhook' | 'escopo') => void;
   currentRole: Role;
   setCurrentRole: (role: Role) => void;
   currentAuthRole: AuthSessionRole;
@@ -57,6 +58,13 @@ export const Header: React.FC<HeaderProps> = ({
       label: 'Balcão & Fila Geral',
       shortLabel: 'Balcão & Fila',
       icon: Bike,
+      adminOnly: false,
+    },
+    {
+      id: 'historico' as const,
+      label: 'Histórico & Caixa',
+      shortLabel: 'Histórico & Caixa',
+      icon: FileSpreadsheet,
       adminOnly: false,
     },
     {

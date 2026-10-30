@@ -1,6 +1,6 @@
 {
-  "summary":  "Plano de higienização de URLs e navegação por âncoras na Landing Page: remoção automática de hashes residuais (/#solucao) para carregar sempre no topo e execução de rolagem suave sem poluir a barra de endereços do navegador.",
-  "updatedAt":  "2026-10-29T12:57:57.127684397Z",
+  "summary":  "Plano de implementação detalhado para a nova aba 'Histórico de Entregas & Conferência de Caixa' no painel do balcão, incluindo filtros por período (Hoje, 7 dias, 30 dias), métricas consolidadas de taxas e volume, exportação em CSV e impressão de relatório de conferência de caixa.",
+  "updatedAt":  "2026-10-30T15:48:00.677248111Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

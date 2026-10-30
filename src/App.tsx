@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { BalcaoView } from './components/BalcaoView';
 import { MotoboyPortalView } from './components/MotoboyPortalView';
 import { FechamentoSemanalView } from './components/FechamentoSemanalModal';
+import { HistoricoConferenciaCaixaView } from './components/HistoricoConferenciaCaixaView';
 import { TabelaTaxasView } from './components/TabelaTaxasModal';
 import { MotoboysView } from './components/MotoboysModal';
 import { ScopeDocumentationView } from './components/ScopeDocumentationView';
@@ -246,12 +247,12 @@ export default function App() {
   // Controle de navegação interna do lojista
   const [currentRole, setCurrentRole] = useState<Role>('ADMIN');
   const [activeTab, setActiveTab] = useState<
-    'balcao' | 'fechamento' | 'taxas' | 'motoboys' | 'api_webhook' | 'escopo'
+    'balcao' | 'historico' | 'fechamento' | 'taxas' | 'motoboys' | 'api_webhook' | 'escopo'
   >('balcao');
 
-  // Se estiver em modo BALCAO, força aba operacional
+  // Se estiver em modo BALCAO, força abas permitidas (balcao ou historico)
   useEffect(() => {
-    if (currentAuthRole === 'BALCAO' && activeTab !== 'balcao') {
+    if (currentAuthRole === 'BALCAO' && activeTab !== 'balcao' && activeTab !== 'historico') {
       setActiveTab('balcao');
     }
   }, [currentAuthRole, activeTab]);
@@ -614,6 +615,16 @@ export default function App() {
             onAddDelivery={handleAddDelivery}
             onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
             onUpdateAddressCache={handleUpdateAddressCache}
+            onNavigateToHistorico={() => setActiveTab('historico')}
+          />
+        )}
+
+        {activeTab === 'historico' && (
+          <HistoricoConferenciaCaixaView
+            deliveries={deliveries}
+            couriers={couriers}
+            storeConfig={storeConfig}
+            onBackToBalcao={() => setActiveTab('balcao')}
           />
         )}
 
