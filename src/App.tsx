@@ -150,6 +150,12 @@ export default function App() {
     try {
       const fullUrl = search ? `${path}?${search}` : path;
       window.history.pushState({}, '', fullUrl);
+      if (path === '/' && typeof window !== 'undefined') {
+        if (window.location.hash) {
+          window.history.replaceState(null, '', fullUrl);
+        }
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
     } catch (e) {
       console.error(e);
     }

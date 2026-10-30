@@ -40,6 +40,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const estimatedMoneySaved = Math.round(monthlyDeliveries * 0.65);
   const hoursSavedPerMonth = Math.round(courierCount * 3.5);
 
+  // Higieniza qualquer fragmento de hash residual (ex: /#solucao) ao carregar a página inicial
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.hash) {
+        try {
+          const cleanUrl = window.location.pathname + window.location.search;
+          window.history.replaceState(null, '', cleanUrl);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, []);
+
   const handleScrollToSection = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
