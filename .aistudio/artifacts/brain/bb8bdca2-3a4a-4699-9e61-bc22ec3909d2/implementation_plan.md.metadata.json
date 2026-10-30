@@ -1,6 +1,6 @@
 {
-  "summary":  "Plano de implementação detalhado para a nova aba 'Histórico de Entregas & Conferência de Caixa' no painel do balcão, incluindo filtros por período (Hoje, 7 dias, 30 dias), métricas consolidadas de taxas e volume, exportação em CSV e impressão de relatório de conferência de caixa.",
-  "updatedAt":  "2026-10-30T15:48:00.677248111Z",
+  "summary":  "Plano de implementação para o módulo de checkout profissional com integração Asaas, planos Essencial (R$ 30), Profissional (R$ 50) e Turbo (R$ 70), período de 7 dias de teste grátis, geração automática do link exclusivo do cliente e inclusão no Dev Admin Portal.",
+  "updatedAt":  "2026-10-30T18:23:53.072305325Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

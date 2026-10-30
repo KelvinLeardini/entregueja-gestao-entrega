@@ -20,12 +20,14 @@ import {
 
 interface LandingPageProps {
   onNavigateToDemo: () => void;
+  onNavigateToCheckout?: (plan?: 'ESSENCIAL' | 'PROFISSIONAL' | 'TURBO') => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigateToDemo,
+  onNavigateToCheckout,
   theme,
   onToggleTheme,
 }) => {
@@ -111,7 +113,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
           </nav>
 
-          {/* Zona 3: Ação Primária (Testar Demonstração Grátis) + Toggle de Tema */}
+          {/* Zona 3: Ação Primária (Assinar / Testar Demonstração Grátis) + Toggle de Tema */}
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={onToggleTheme}
@@ -123,10 +125,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <button
               onClick={onNavigateToDemo}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap"
+            >
+              <PlayCircle className="w-3.5 h-3.5 text-amber-500" />
+              <span>Ver Demonstração</span>
+            </button>
+
+            <button
+              onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('PROFISSIONAL') : onNavigateToDemo())}
               className="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-950 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-lg shadow-sm shadow-amber-500/20 transition-all whitespace-nowrap"
             >
-              <PlayCircle className="w-4 h-4" />
-              <span>Testar Demonstração Grátis</span>
+              <Sparkles className="w-4 h-4" />
+              <span>Assinar (7 Dias Grátis)</span>
             </button>
           </div>
         </div>
@@ -151,20 +161,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
-                onClick={onNavigateToDemo}
+                onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('PROFISSIONAL') : onNavigateToDemo())}
                 className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
               >
-                <PlayCircle className="w-5 h-5" />
-                <span>Testar Demonstração do Sistema</span>
+                <Sparkles className="w-5 h-5" />
+                <span>Começar 7 Dias Grátis Agora</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
               <button
-                onClick={() => handleScrollToSection('calculadora')}
+                onClick={onNavigateToDemo}
                 className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 text-sm"
               >
+                <PlayCircle className="w-4 h-4 text-amber-500" />
+                <span>Testar Demonstração</span>
+              </button>
+
+              <button
+                onClick={() => handleScrollToSection('calculadora')}
+                className="w-full sm:w-auto px-5 py-3.5 rounded-xl font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm"
+              >
                 <Calculator className="w-4 h-4 text-amber-500" />
-                <span>Calcular Quanto Vou Economizar</span>
+                <span>Simular Economia</span>
               </button>
             </div>
 
@@ -390,28 +408,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 6. Planos de Assinatura */}
+      {/* 6. Planos de Assinatura Asaas */}
       <section id="planos" className="py-16 sm:py-24 border-b border-slate-100 dark:border-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-2xl mx-auto mb-14 space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-500">
+              Gestão de Assinaturas Asaas
+            </span>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Assinatura fixa sem cobrança por pedido
+              7 Dias de Teste Gratuito em Todos os Planos
             </h2>
             <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400">
-              Diferente de outras plataformas, você não paga nenhuma comissão sobre suas taxas de entrega.
+              Zero comissão por corrida. Você testa na sua loja por 7 dias sem cobrança imediata e só continua se aprovar.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {/* Plano Essencial */}
+            {/* Plano Essencial - R$ 30 */}
             <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
               <div>
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Iniciante</span>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">Essencial</h3>
                 <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono-numbers">R$ 89</span>
+                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono-numbers">R$ 30</span>
                   <span className="text-xs text-slate-500">/mês</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">Para deliverys de bairro em crescimento.</p>
+                <div className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>7 dias grátis · Cancele quando quiser</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Para deliverys locais e operações em início.</p>
 
                 <ul className="mt-6 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
                   <li className="flex items-center gap-2">
@@ -426,18 +452,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>Fechamento semanal com PIX</span>
                   </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Conferência de caixa e histórico</span>
+                  </li>
                 </ul>
               </div>
 
               <button
-                onClick={onNavigateToDemo}
-                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors"
+                onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('ESSENCIAL') : onNavigateToDemo())}
+                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors text-center"
               >
-                Testar na Demonstração
+                Começar 7 Dias Grátis
               </button>
             </div>
 
-            {/* Plano Pro (Destaque) */}
+            {/* Plano Profissional - R$ 50 (Mais Escolhido) */}
             <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-amber-500 shadow-md shadow-amber-500/10 flex flex-col justify-between relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 uppercase tracking-wider">
                 Mais Escolhido
@@ -447,74 +477,92 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Operação Completa</span>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">Profissional</h3>
                 <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono-numbers">R$ 149</span>
+                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono-numbers">R$ 50</span>
                   <span className="text-xs text-slate-500">/mês</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">Para deliverys de alto volume diário.</p>
+                <div className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>7 dias grátis · Cobrança via Asaas</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Para deliverys com alto fluxo diário de entregas.</p>
 
                 <ul className="mt-6 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span><strong>Motoboys ilimitados</strong></span>
+                    <span><strong>Motoboys Ilimitados</strong></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span><strong>Portal Exclusivo com 2FA</strong></span>
+                    <span><strong>Portal Exclusivo do Motoboy com 2FA</strong></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>Integrações iFood, 99Food e PDVs</span>
+                    <span>Separação de Balcão e Admin com PIN</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>Separação de Balcão e Admin</span>
+                    <span>Exportação de relatórios em CSV e recibos</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Suporte direto via WhatsApp</span>
                   </li>
                 </ul>
               </div>
 
               <button
-                onClick={onNavigateToDemo}
-                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl shadow-sm transition-all"
+                onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('PROFISSIONAL') : onNavigateToDemo())}
+                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl shadow-sm transition-all text-center"
               >
-                Testar Grátis Agora
+                Assinar Plano Profissional (7 Dias Grátis)
               </button>
             </div>
 
-            {/* Plano Redes / Enterprise */}
+            {/* Plano Turbo - R$ 70 */}
             <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
               <div>
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Multi-Unidades</span>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">Franquias & Redes</h3>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alta Performance</span>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">Turbo</h3>
                 <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono-numbers">R$ 279</span>
+                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono-numbers">R$ 70</span>
                   <span className="text-xs text-slate-500">/mês</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">Para redes e franquias com múltiplas lojas.</p>
+                <div className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>7 dias grátis · Recursos Enterprise</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Para redes, franquias ou grandes operações.</p>
 
                 <ul className="mt-6 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Multi-lojas centralizadas</span>
+                    <span>Tudo do plano Profissional</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Suporte direto via WhatsApp</span>
+                    <span>Integrações com iFood, 99Food e PDVs</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Setup assistido pelo desenvolvedor</span>
+                    <span>Webhook de eventos em tempo real</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Impressão térmica de comandas</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Atendimento e onboarding prioritário</span>
                   </li>
                 </ul>
               </div>
 
-              <a
-                href="https://wa.me/5511999990000?text=Olá,%20tenho%20interesse%20no%20EntregueJá%20para%20minha%20rede%20de%20lojas."
-                target="_blank"
-                rel="noreferrer"
-                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors text-center block"
+              <button
+                onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('TURBO') : onNavigateToDemo())}
+                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors text-center"
               >
-                Falar com Especialista
-              </a>
+                Começar 7 Dias Grátis
+              </button>
             </div>
           </div>
         </div>

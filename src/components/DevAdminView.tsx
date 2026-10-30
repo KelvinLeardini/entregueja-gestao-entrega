@@ -45,6 +45,7 @@ interface DevAdminViewProps {
   onRefreshTenants: () => void;
   onNavigateToTenant: (slug: string, devSuperAdmin?: boolean) => void;
   onNavigateToSandbox: () => void;
+  onNavigateToCheckout?: () => void;
   onNavigateHome: () => void;
 }
 
@@ -53,6 +54,7 @@ export const DevAdminView: React.FC<DevAdminViewProps> = ({
   onRefreshTenants,
   onNavigateToTenant,
   onNavigateToSandbox,
+  onNavigateToCheckout,
   onNavigateHome,
 }) => {
   // Autenticação Segura de Desenvolvedor por E-mail e Senha Alfanumérica
@@ -340,6 +342,17 @@ export const DevAdminView: React.FC<DevAdminViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5">
+          {onNavigateToCheckout && (
+            <button
+              onClick={onNavigateToCheckout}
+              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors text-xs flex items-center gap-1.5 border border-slate-700"
+              title="Abrir Página de Pagamento & Checkout (/assinar)"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">Página de Checkout</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsChangePasswordModalOpen(true)}
             className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors text-xs flex items-center gap-1.5 border border-slate-700"
@@ -497,15 +510,17 @@ export const DevAdminView: React.FC<DevAdminViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Plano Contratado</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Plano Contratado (Asaas)</label>
                   <select
                     value={newPlan}
                     onChange={(e) => setNewPlan(e.target.value as any)}
                     className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-semibold"
                   >
-                    <option value="ESSENCIAL">Essencial (R$ 89/mês)</option>
-                    <option value="PRO">Profissional (R$ 149/mês)</option>
-                    <option value="ENTERPRISE">Redes & Franquias (R$ 279/mês)</option>
+                    <option value="ESSENCIAL">Essencial (R$ 30/mês)</option>
+                    <option value="PROFISSIONAL">Profissional (R$ 50/mês)</option>
+                    <option value="TURBO">Turbo (R$ 70/mês)</option>
+                    <option value="PRO">Legado: Pro (R$ 50/mês)</option>
+                    <option value="ENTERPRISE">Legado: Enterprise (R$ 70/mês)</option>
                   </select>
                 </div>
 
@@ -693,10 +708,42 @@ export const DevAdminView: React.FC<DevAdminViewProps> = ({
                           </td>
 
                           {/* Status & Plano */}
-                          <td className="py-3.5 px-4">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              {store.plan}
-                            </span>
+                          <td className="py-3.5 px-4 space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                  store.plan === 'TURBO'
+                                    ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                                    : store.plan === 'PROFISSIONAL' || store.plan === 'PRO'
+                                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                }`}
+                              >
+                                {store.plan === 'TURBO'
+                                  ? 'TURBO R$ 70'
+                                  : store.plan === 'PROFISSIONAL' || store.plan === 'PRO'
+                                  ? 'PRO R$ 50'
+                                  : 'ESSENCIAL R$ 30'}
+                              </span>
+
+                              {store.status === 'TRIAL' && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                  TRIAL 7 DIAS
+                                </span>
+                              )}
+                            </div>
+
+                            {store.trialEndsAt && (
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                Trial até: {new Date(store.trialEndsAt).toLocaleDateString('pt-BR')}
+                              </div>
+                            )}
+
+                            {store.asaasSubscriptionId && (
+                              <div className="text-[10px] text-slate-500 font-mono">
+                                Asaas: {store.asaasSubscriptionId}
+                              </div>
+                            )}
                           </td>
 
                           {/* Magic Links e Botão de Exclusão */}

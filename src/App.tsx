@@ -14,6 +14,7 @@ import { LandingPage } from './components/LandingPage';
 import { ClientDemoPlayground } from './components/ClientDemoPlayground';
 import { DevAdminView } from './components/DevAdminView';
 import { DevSandboxView } from './components/DevSandboxView';
+import { CheckoutAssinaturaView } from './components/CheckoutAssinaturaView';
 import {
   User,
   Delivery,
@@ -551,12 +552,33 @@ export default function App() {
           navigateTo(`/${slug}`, devSuperAdmin ? 'devSuperAdmin=true' : '');
         }}
         onNavigateToSandbox={() => navigateTo('/dev-admin-portal/sandbox')}
+        onNavigateToCheckout={() => navigateTo('/assinar')}
         onNavigateHome={() => navigateTo('/')}
       />
     );
   }
 
-  // CASO 3: ROTA DE TESTE INTERATIVO PARA POTENCIAIS CLIENTES (/demo)
+  // CASO 3: ROTA DE CHECKOUT E ASSINATURA ASAAS (/assinar ou /checkout)
+  if (currentPath === '/assinar' || currentPath === '/checkout') {
+    const rawPlan = (searchParams.get('plano') || searchParams.get('plan') || 'PROFISSIONAL').toUpperCase();
+    const validPlan =
+      rawPlan === 'ESSENCIAL' || rawPlan === 'TURBO' ? rawPlan : 'PROFISSIONAL';
+
+    return (
+      <CheckoutAssinaturaView
+        initialPlan={validPlan as any}
+        onBackToHome={() => navigateTo('/')}
+        onNavigateToTenant={(slug) => {
+          setTenants(loadTenants());
+          navigateTo(`/${slug}`);
+        }}
+        onNavigateToDevAdmin={() => navigateTo('/dev-admin-portal')}
+        theme={theme}
+      />
+    );
+  }
+
+  // CASO 4: ROTA DE TESTE INTERATIVO PARA POTENCIAIS CLIENTES (/demo)
   if (currentPath === '/demo') {
     return (
       <ClientDemoPlayground
@@ -567,11 +589,14 @@ export default function App() {
     );
   }
 
-  // CASO 4: ROTA RAIZ (/) -> LANDING PAGE SAAS (Página institucional de anúncio)
+  // CASO 5: ROTA RAIZ (/) -> LANDING PAGE SAAS (Página institucional de anúncio)
   if (currentPath === '/' || !activeTenant) {
     return (
       <LandingPage
         onNavigateToDemo={() => navigateTo('/demo')}
+        onNavigateToCheckout={(plan) => {
+          navigateTo('/assinar', plan ? `plano=${plan.toLowerCase()}` : '');
+        }}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />

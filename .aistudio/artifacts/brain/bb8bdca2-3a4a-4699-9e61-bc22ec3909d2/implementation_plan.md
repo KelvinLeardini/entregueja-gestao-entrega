@@ -1,137 +1,147 @@
-# Nova Aba 'Histórico & Conferência de Caixa' no Balcão
+# Sistema Profissional de Assinaturas & Checkout com Integração Asaas
 
-Implementação de uma aba dedicada de **Histórico de Entregas e Conferência de Caixa** integrada ao painel do balcão e à navegação principal da loja, permitindo aos operadores e gerentes auditar entregas concluídas por período, totalizar taxas pagas a motoboys, conferir valores e volumes recebidos, além de exportar dados em CSV e emitir relatórios impressos para fechamento de caixa.
+Implementação do fluxo completo de checkout profissional com gestão de assinaturas recorrentes via Asaas (Pix com QR Code, Cartão de Crédito e Boleto), contemplando os planos Essencial (R$ 30), Profissional (R$ 50) e Turbo (R$ 70), 7 dias de degustação gratuita sem cobrança imediata, geração instantânea da URL exclusiva do restaurante (`/[slug]`) e provisionamento automático no portal do desenvolvedor (`/dev-admin-portal`).
 
 ---
 
-## Decisões Confirmadas com o Usuário
+## Revisão do Usuário & Decisões Confirmadas
 
 > [!IMPORTANT]
-> - **Filtros de Período**: Seletores rápidos para **Hoje**, **Últimos 7 dias** e **Últimos 30 dias**, com data/hora precisa e filtragem em tempo real sobre entregas finalizadas (`DELIVERED`, `CANCELED_AFTER_DELIVERY` com taxa devida, e canceladas pré-saída).
-> - **Métricas de Caixa e Conferência**:
->   1. **Total de Taxas de Motoboys** (valor acumulado de diárias/taxas por entrega devidas aos entregadores).
->   2. **Quantidade Total de Pedidos Concluídos** (com taxa de entrega bem-sucedida vs cancelamentos).
->   3. **Volume Financeiro dos Pedidos** (total faturado em mercadorias e breakdown entre pagamentos online vs valores cobrados no destino pelo motoboy).
-> - **Exportação e Impressão**:
->   1. **Exportar CSV**: Download direto com dados tabulares estruturados (Data/Hora, Nº Pedido, Canal, Motoboy, Cliente, Bairro, Forma de Pagamento, Valor Pedido, Taxa Motoboy, Status).
->   2. **Impressão de Relatório de Caixa**: Layout limpo e otimizado para conferência física (folha A4 ou bobina térmica 80mm), perfeito para conferência de gaveta e acerto de turno.
+> As decisões principais levantadas na etapa de alinhamento foram consolidadas abaixo conforme confirmado com o cliente:
+
+- **Provedor de Pagamento Homologado**: Integração com Asaas para cobranças recorrentes via Pix instantâneo, Cartão de Crédito com verificação de segurança e Boleto Bancário.
+- **Grade e Precificação dos Planos**:
+  1. **Essencial**: R$ 30,00/mês — voltado para operações individuais ou até 3 motoboys.
+  2. **Profissional**: R$ 50,00/mês — motoboys ilimitados, fechamento semanal PIX e portal do motoboy com 2FA.
+  3. **Turbo**: R$ 70,00/mês — todas as integrações de PDV/iFood/99Food, múltiplos balcões e suporte prioritário.
+- **Trial de 7 Dias**: Liberação imediata de acesso completo com 7 dias de teste gratuito antes do débito da primeira fatura.
+- **Onboarding Pós-Pagamento & Dev Portal**: Imediatamente após a confirmação do checkout, o sistema gera a URL exclusiva da loja (`https://dominio.com/[slug]`), entrega os links de acesso rápido (Balcão, Gestão e Motoboy) e cadastra a nova unidade automaticamente no banco de dados de tenants gerenciado pelo Super Admin Dev (`/dev-admin-portal`).
 
 ---
 
-## 1. Visão Geral e Conceito
+## 1. Visão Geral & Conceito do Produto
 
-### O Problema do Operador de Balcão
-Atualmente, no pico do turno, a coluna de "Concluídos" no Kanban ou na tabela geral lista apenas as entregas correntes sem filtros por período retroativo (7 ou 30 dias) e sem um painel de soma financeira direta para conferência de caixa. Ao fechar o caixa ou conferir o dinheiro que retornou com os motoboys, o operador precisa fazer contas manuais.
-
-### A Solução
-Uma visão analítica e operacional completa com:
-1. **Cards de Consolidação de Caixa**: Indicadores em tempo real do período selecionado (Volume Bruto, Total em Taxas de Entrega, Saldo em Dinheiro a Cobrar no Balcão, Entregas Concluídas).
-2. **Tabela Analítica de Entregas Concluídas**: Linhas densas, alinhamento tabular (`tabular-nums`), pesquisa instantânea por cliente, pedido ou motoboy, e filtro por canal de venda (iFood, 99Food, Keeta, Balcão).
-3. **Agrupamento por Motoboy**: Resumo de quantas viagens cada motoboy realizou no período e o subtotal exato de taxas a acertar.
-4. **Exportação & Impressão**: Botões utilitários de 1 clique para gerar planilha (.csv) e abrir o diálogo de impressão de comprovante de fechamento de caixa.
+- **O que faz**: Permite que donos de hamburguerias, pizzarias, farmácias e restaurantes assinem a plataforma de forma autônoma e segura. Na tela de checkout `/assinar`, o cliente informa os dados cadastrais (Razão Social/Nome, CNPJ/CPF, WhatsApp, e-mail, endereço da loja para cálculo das rotas OSRM e slug exclusivo), escolhe seu plano e o meio de pagamento.
+- **Público-Alvo**: Estabelecimentos comerciais com entregas próprias que buscam eliminar atritos no fechamento de motoboys e profissionalizar sua logística.
+- **Proposta de Valor**: Transparência financeira total, barreira de entrada zero com 7 dias grátis, checkout ágil sem burocracia e ativação imediata do sistema sem intervenção manual.
 
 ---
 
-## 2. Experiência do Usuário e Design Visual
+## 2. Experiência do Usuário & Design Visual
 
-### Navegação e Pontos de Acesso
-- **No Header Principal**: Adicionada a aba `Histórico & Caixa` na barra de categorias da loja, visível tanto no perfil Administrador quanto no perfil Balcão (`adminOnly: false`).
-- **No Painel do Balcão (`BalcaoView`)**: Um botão de atalho rápido na barra superior de controles ("Ir para Histórico & Caixa"), permitindo transição com 1 clique sem perder o contexto operacional.
+### Fluxos Principais do Usuário
 
-### Layout e Estética (Diretrizes SaaS & Dashboard)
-- **Zero-Pill Discipline**: Tipografia limpa com separadores sutis (`·`), sem tags em cápsula desnecessárias.
-- **Tabular Figures**: Todos os valores monetários (`R$ 0,00`), percentuais e contadores formatados com `tabular-nums font-mono` para alinhamento vertical perfeito.
-- **Micro-Interações e Responsividade**: Design adaptativo para telas grandes de balcão (1440px) e tablets/telas menores de caixa (compactação elegante em cards no mobile).
+1. **Escolha na Landing Page**:
+   - A seção de preços na Landing Page exibe os novos valores (R$ 30, R$ 50 e R$ 70) com o selo visual "7 Dias Grátis - Cancele quando quiser".
+   - Botões "Assinar Plano" e "Começar 7 Dias Grátis" direcionam para `/assinar?plano=[essencial|profissional|turbo]`.
+
+2. **Página de Checkout Profissional (`/assinar`)**:
+   - **Etapa 1: Dados do Negócio**: Nome do comércio, segmento comercial (Hamburgueria, Pizzaria, etc.), responsável, WhatsApp, e-mail, CNPJ/CPF e definição da URL exclusiva (`/[slug]`) com validação em tempo real de disponibilidade.
+   - **Etapa 2: Endereço de Origem**: Endereço base da loja com preenchimento assistido para cálculo das rotas e km dos motoboys.
+   - **Etapa 3: Seleção do Plano & Faturamento**: Seletor dinâmico dos 3 planos com destaque para os 7 dias grátis ("Primeira cobrança de R$ [valor] apenas em [Data daqui a 7 dias]").
+   - **Etapa 4: Método de Pagamento Asaas**:
+     - *PIX*: Geração de QR Code dinâmico e código Pix Copia e Cola, com contador regressivo e detecção de status.
+     - *Cartão de Crédito*: Campos para número do cartão, titular, validade e CVV com máscara, bandeira automática e botão de preenchimento para teste de homologação.
+     - *Boleto Bancário*: Linha digitável e opção de visualização.
+
+3. **Tela de Boas-Vindas & Entrega de Acessos**:
+   - Feedback visual de sucesso informando que o período de 7 dias de teste está ativo.
+   - Card com a URL da loja gerada com 1 clique para copiar (`https://app.../[slug]`).
+   - Botões diretos para abrir o Balcão de Pedidos, Painel do Gestor ou enviar o link do portal para o WhatsApp do restaurante.
+
+4. **Painel do Desenvolvedor (`/dev-admin-portal`)**:
+   - A nova loja aparece instantaneamente na listagem de tenants.
+   - Badges visuais indicando: Plano (Essencial R$ 30, Pro R$ 50, Turbo R$ 70), Status (`TRIAL`), contagem regressiva dos 7 dias e identificadores do Asaas.
+   - Botão para impersonar a loja diretamente com privilégios de super admin.
+
+### Identidade Visual & Diretrizes de Estilo
+- **Paleta de Cores**: Fundo neutro Slate (`bg-slate-950` / `bg-slate-900` no dark mode e `bg-slate-50` / `bg-white` no light mode), realces em Amber (`amber-500` / `amber-400`) e Emerald para validações financeiras (`emerald-500`).
+- **Tipografia**: Hierarquia balanceada com fontes modernas sans-serif e números tabulares (`font-mono tabular-nums`) em todos os valores monetários e contadores.
+- **Zero-Pill Discipline**: Metadados limpos sem sobreposição de pílulas visuais genéricas.
 
 ---
 
-## 3. Arquitetura Técnica e Fluxo de Dados
+## 3. Decisões do Produto & Trade-Offs
+
+- **Arquitetura de Assinatura Asaas**:
+  - *Decisão*: Utilizar criação de cliente (`/api/v3/customers`) e assinatura recorrente (`/api/v3/subscriptions`) com parâmetro `nextDueDate` programado exatamente para 7 dias à frente.
+  - *Vantagem*: Garante o início imediato das operações sem cobrar o comerciante no dia 1, reduzindo a fricção e mantendo a cobrança automatizada após a degustação.
+- **Multi-Tenant e Persistência**:
+  - *Decisão*: Salvar o novo tenant imediatamente no registro de tenants (`saveTenants`), inicializar as estruturas isoladas (`tenant_[slug]_*`) e sincronizar com o backend `/api/tenants`.
+  - *Vantagem*: O cliente não depende de recarregamento e pode começar a lançar entregas instantaneamente, enquanto o Dev Admin enxerga o novo cliente em tempo real.
+- **Ambiente de Teste / Simulação Segura**:
+  - *Decisão*: Fornecer no checkout um seletor de "Modo de Homologação Asaas" (Sandbox/Produção) com preenchimento rápido de cartões de teste e chave Pix fictícia gerada para testes imediatos sem exigir transações reais em contas de produção durante a avaliação.
+
+---
+
+## 4. Arquitetura Técnica & Estratégia de Dados
+
+### Diagrama do Sistema
 
 ```
- ┌────────────────────────────────────────────────────────────────────────┐
- │                              App.tsx                                   │
- │       deliveries[ ]  ·  couriers[ ]  ·  storeConfig  ·  theme          │
- └──────────────────────────────────┬─────────────────────────────────────┘
-                                    │
-           ┌────────────────────────┴────────────────────────┐
-           ▼                                                 ▼
- ┌──────────────────────┐                         ┌──────────────────────┐
- │      Header.tsx      │                         │  BalcaoView.tsx      │
- │  Nova aba:           │                         │  Atalho rápido para  │
- │  "Histórico & Caixa" │                         │  o Histórico         │
- └─────────┬────────────┘                         └──────────┬───────────┘
-           │                                                 │
-           └────────────────────────┬────────────────────────┘
-                                    ▼
-       ┌────────────────────────────────────────────────────────────┐
-       │             HistoricoConferenciaCaixaView.tsx              │
-       │                                                            │
-       │  ┌──────────────────────────────────────────────────────┐  │
-       │  │ Filtros: [Hoje] [Últimos 7 dias] [Últimos 30 dias]  │  │
-       │  │ Busca por texto + Filtro por Canal (iFood/Keeta/...) │  │
-       │  └──────────────────────────────────────────────────────┘  │
-       │                                                            │
-       │  ┌──────────────────────────────────────────────────────┐  │
-       │  │ KPI Strip:                                           │  │
-       │  │ • Total Taxas Motoboys  • Total de Pedidos           │  │
-       │  │ • Faturamento de Pedidos • Valores a Cobrar em Mãos   │  │
-       │  └──────────────────────────────────────────────────────┘  │
-       │                                                            │
-       │  ┌──────────────────────────────────────────────────────┐  │
-       │  │ Resumo Consolidado por Motoboy (Viagens + Taxa Devida│  │
-       │  └──────────────────────────────────────────────────────┘  │
-       │                                                            │
-       │  ┌──────────────────────────────────────────────────────┐  │
-       │  │ Tabela Detalhada com Ordenação e Paginação           │  │
-       │  └──────────────────────────────────────────────────────┘  │
-       │                                                            │
-       │  ┌──────────────────────────────────────────────────────┐  │
-       │  │ Ações: [📥 Baixar Planilha CSV]  [🖨️ Imprimir Fechamento│
-       │  └──────────────────────────────────────────────────────┘  │
-       └────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                             ENTREGUEJÁ SAAS                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+          ┌───────────────────────────┴───────────────────────────┐
+          ▼                                                       ▼
+┌───────────────────┐                                   ┌───────────────────┐
+│   Landing Page    │                                   │ Dev Admin Portal  │
+│    (Preços 30,    │                                   │ (/dev-admin-portal│
+│    50 e 70 R$)    │                                   │  Gestão Tenants)  │
+└─────────┬─────────┘                                   └─────────▲─────────┘
+          │ (Clique "Assinar Plano")                              │
+          ▼                                                       │
+┌─────────────────────────────────────────────────────────┐       │
+│           CheckoutAssinaturaView (/assinar)             │       │
+│  - Cadastro Loja (CNPJ, Nome, Endereço, Slug)           │       │
+│  - Seleção de Plano (Essencial, Pro, Turbo)             │       │
+│  - Período de 7 dias grátis (nextDueDate = now + 7d)    │       │
+│  - Gateway Asaas (Pix QR Code, Cartão, Boleto)          │       │
+└───────────────────────────┬─────────────────────────────┘       │
+                            │                                     │
+                            ▼                                     │
+┌─────────────────────────────────────────────────────────┐       │
+│                 Serviço Asaas Client                    │       │
+│                (src/services/asaas.ts)                  │       │
+│  - createAsaasCustomer(data)                            │       │
+│  - createRecurringSubscription(plan, method, trialDays) │       │
+│  - generatePixQrCode() / tokenizeCard()                 │       │
+└───────────────────────────┬─────────────────────────────┘       │
+                            │                                     │
+                            ▼ (Sucesso da Assinatura)             │
+┌─────────────────────────────────────────────────────────┐       │
+│              Provisionamento de Tenant                  │───────┘
+│  - createTenant({ slug, plan, trialEndsAt, ... })       │  (Aparece no
+│  - saveTenantScopedData(slug, { config, rates... })     │   Painel Dev)
+│  - Gera URL: https://app.../[slug]                      │
+└───────────────────────────┬─────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────┐
+│                Tela de Conclusão & Links                │
+│  - Link Balcão: /[slug]?role=balcao                     │
+│  - Link Gestão: /[slug]?role=admin                      │
+│  - Compartilhamento WhatsApp para a Loja                │
+└─────────────────────────────────────────────────────────┘
 ```
 
----
+### Componentes e Módulos Previstos
 
-## 4. Estrutura de Implementação por Componente
-
-### 4.1. Novo Componente: `src/components/HistoricoConferenciaCaixaView.tsx`
-- **Filtros Temporais**:
-  - `HOJE`: Entregas realizadas desde as 00:00 do dia atual até as 23:59.
-  - `SETE_DIAS`: Entregas dos últimos 7 dias corridos.
-  - `TRINTA_DIAS`: Entregas dos últimos 30 dias corridos.
-- **Cálculo de Totais**:
-  - `totalTaxas`: Soma de `feeAmount` para entregas onde `isFeePayable` é verdadeiro (`DELIVERED` e `CANCELED_AFTER_DELIVERY`).
-  - `totalPedidos`: Contagem de entregas finalizadas.
-  - `volumePedidos`: Soma de `orderTotal` dos pedidos concluídos.
-  - `valoresCobrarDestino`: Soma de pedidos com pagamento `CASH`, `CARD` ou `PIX` cobrados no ato pelo motoboy (conferência do dinheiro físico).
-- **Exportação CSV**:
-  - Função pura em TypeScript gerando cabeçalhos UTF-8 (`\uFEFF`) e linhas separadas por ponto-e-vírgula (compatível com Excel no Brasil).
-- **Impressão de Conferência**:
-  - Estilização `@media print` dedicada para impressão de comprovante estruturado contendo resumo da loja, período, totais por motoboy e relação de pedidos.
-
-### 4.2. Atualização em `src/components/Header.tsx`
-- Adicionar o item `'historico'` à lista `allNavItems` com ícone de histórico/auditoria (`History` ou `FileSpreadsheet`), configurado como `adminOnly: false` para que o operador de caixa no modo Balcão também tenha acesso imediato.
-
-### 4.3. Atualização em `src/App.tsx`
-- Expandir a tipagem de `activeTab` para incluir `'historico'`.
-- Renderizar `<HistoricoConferenciaCaixaView>` quando `activeTab === 'historico'`.
-- Permitir que a navegação do modo Balcão mantenha a permissão de alternar entre o `Balcão Operacional` e o `Histórico & Conferência de Caixa`.
-
-### 4.4. Integração em `src/components/BalcaoView.tsx`
-- Adicionar na barra de ferramentas do balcão um botão de acesso rápido "Histórico & Caixa", permitindo navegar diretamente à conferência.
-
----
-
-## 5. Plano de Validação e Testes
-
-1. **Validação de Filtros por Período**:
-   - Alternar entre `Hoje`, `Últimos 7 dias` e `Últimos 30 dias` e confirmar que as listas e métricas são recalculadas com precisão instantânea.
-2. **Validação das Métricas Financeiras**:
-   - Conferir soma de taxas de motoboy (`feeAmount`), contagem de pedidos e volume total (`orderTotal`), conferindo casos de cancelamento pós-saída (onde a taxa permanece devida).
-3. **Validação da Exportação CSV**:
-   - Clicar em "Exportar CSV" e checar se o arquivo `.csv` é baixado com todos os campos preenchidos e codificação adequada.
-4. **Validação da Impressão de Relatório**:
-   - Clicar em "Imprimir Relatório" e validar se a janela de impressão do navegador exibe o formato de conferência limpo sem elementos de interface desnecessários.
-5. **Verificação de Compilação**:
-   - Executar `compile_applet` e garantir 0 erros de TypeScript e integridade visual.
+1. **`src/types/index.ts`**:
+   - Atualização do tipo `TenantStore`: suporte a planos `'ESSENCIAL' | 'PROFISSIONAL' | 'TURBO'`, campos de `trialEndsAt`, `asaasCustomerId`, `asaasSubscriptionId`, `billingStatus`.
+2. **`src/services/asaas.ts`**:
+   - Estruturas de dados da API Asaas (Cliente, Assinatura, Cobrança, QR Code Pix).
+   - Mock/Proxy de homologação e emissão de assinaturas com vencimento para +7 dias.
+3. **`src/components/CheckoutAssinaturaView.tsx`**:
+   - Interface completa e responsiva do checkout em 3 etapas com validação de campos brasileiros (máscaras de CNPJ/CPF, WhatsApp, CEP).
+   - Resumo claro do plano com contagem regressiva dos 7 dias gratuitos.
+   - Telas de pagamento para Pix, Cartão e Boleto.
+   - Tela final com os links diretos da loja criada.
+4. **`src/components/LandingPage.tsx`**:
+   - Ajuste dos cards de planos: Essencial (R$ 30), Profissional (R$ 50) e Turbo (R$ 70).
+   - Botões direcionando para a nova rota de assinatura.
+5. **`src/components/DevAdminView.tsx`**:
+   - Exibição destacada do selo "TRIAL (X dias restantes)", plano assinado e código Asaas de cada comércio.
+6. **`src/App.tsx`**:
+   - Registro da rota `/assinar` e `/checkout`, com suporte ao parâmetro de URL `?plano=...`.

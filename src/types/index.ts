@@ -11,10 +11,11 @@ export interface TenantStore {
   name: string;
   segment: SegmentType;
   status: TenantStatus;
-  plan: 'ESSENCIAL' | 'PRO' | 'ENTERPRISE';
+  plan: 'ESSENCIAL' | 'PROFISSIONAL' | 'TURBO' | 'PRO' | 'ENTERPRISE';
   ownerName: string;
   ownerPhone: string;
   ownerEmail: string;
+  cnpjCpf?: string;
   originAddress: string;
   originLat: number;
   originLng: number;
@@ -23,6 +24,11 @@ export interface TenantStore {
   defaultKmRate: number;
   storePin: string; // Padrão '1234' para balcão
   adminPin: string; // Padrão '9876' para gestor
+  trialEndsAt?: string; // Data de expiração dos 7 dias grátis
+  asaasCustomerId?: string;
+  asaasSubscriptionId?: string;
+  billingMethod?: 'PIX' | 'CREDIT_CARD' | 'BOLETO';
+  billingStatus?: 'ACTIVE' | 'TRIAL' | 'OVERDUE';
   createdAt: string;
   activeDeliveriesCount?: number;
   activeCouriersCount?: number;
