@@ -136,24 +136,24 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
         <div>
           <div className="flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-orange-600" />
-            <h2 className="text-base font-bold text-slate-900">
+            <Sliders className="w-5 h-5 text-amber-500" />
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
               Tabela de Taxas por Faixas de Distância (KM)
             </h2>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Liberdade total para adicionar, editar ou excluir blocos de KM e definir o valor de taxa exato para cada raio da hamburgueria.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={handleSortRanges}
-            className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center gap-1.5"
+            className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-1.5 shadow-2xs"
             title="Organizar do menor para o maior KM"
           >
             <ArrowUpDown className="w-3.5 h-3.5" />
@@ -162,7 +162,7 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
           <button
             type="button"
             onClick={handleResetDefaults}
-            className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center gap-1.5"
+            className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-1.5 shadow-2xs"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Padrão</span>
@@ -170,9 +170,9 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
           <button
             type="button"
             onClick={handleSaveAll}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-colors flex items-center gap-1.5 shadow-sm"
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-slate-950 transition-colors flex items-center gap-1.5 shadow-xs"
           >
-            <Save className="w-3.5 h-3.5 text-orange-400" />
+            <Save className="w-3.5 h-3.5 text-amber-400 dark:text-slate-950" />
             <span>{isSaved ? 'Taxas Salvas com Sucesso!' : 'Salvar Alterações'}</span>
           </button>
         </div>
@@ -180,13 +180,13 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Coluna 1: Tabela Dinâmica e Livre de Blocos de KM (8 colunas) */}
-        <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider block">
                 Blocos de KM Cadastrados ({ranges.length})
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
                 Você pode editar as distâncias e valores diretamente nos campos abaixo.
               </span>
             </div>
@@ -194,7 +194,7 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
             <button
               type="button"
               onClick={handleQuickAddBlock}
-              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-1.5 transition-colors shadow-2xs"
+              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 flex items-center gap-1.5 transition-colors shadow-2xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>+ Adicionar Bloco de KM</span>
@@ -204,23 +204,23 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
           {/* Lista de Blocos Editáveis */}
           <div className="space-y-3">
             {ranges.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
                 Nenhum bloco de KM cadastrado. Adicione o primeiro bloco abaixo.
               </div>
             ) : (
               ranges.map((range, idx) => (
                 <div
                   key={range.id}
-                  className={`p-3 rounded-xl border transition-all ${
+                  className={`p-3.5 rounded-xl border transition-all ${
                     range.isActive
-                      ? 'bg-slate-50/70 border-slate-200 hover:border-slate-300'
-                      : 'bg-slate-100/50 border-slate-200 opacity-60'
+                      ? 'bg-slate-50/80 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600'
+                      : 'bg-slate-100/60 dark:bg-slate-850/60 border-slate-200 dark:border-slate-800 opacity-60'
                   }`}
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
                     {/* Indicador do Bloco */}
                     <div className="sm:col-span-1 flex items-center justify-center">
-                      <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-bold font-mono text-xs flex items-center justify-center">
+                      <span className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold font-mono text-xs flex items-center justify-center">
                         {idx + 1}
                       </span>
                     </div>
@@ -228,7 +228,7 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                     {/* KM Inicial e Final */}
                     <div className="sm:col-span-4 flex items-center gap-1.5">
                       <div className="w-1/2">
-                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">
+                        <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">
                           De (KM)
                         </label>
                         <input
@@ -243,12 +243,12 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                               parseFloat(e.target.value) || 0
                             )
                           }
-                          className="w-full text-xs font-bold font-mono-numbers bg-white border border-slate-300 rounded-lg p-1.5 text-slate-900 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                          className="w-full text-xs font-bold font-mono-numbers bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-1.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                         />
                       </div>
-                      <span className="text-xs text-slate-400 mt-3">até</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 mt-3">até</span>
                       <div className="w-1/2">
-                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">
+                        <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">
                           Até (KM)
                         </label>
                         <input
@@ -263,18 +263,18 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                               parseFloat(e.target.value) || 0
                             )
                           }
-                          className="w-full text-xs font-bold font-mono-numbers bg-white border border-slate-300 rounded-lg p-1.5 text-slate-900 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                          className="w-full text-xs font-bold font-mono-numbers bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-1.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                         />
                       </div>
                     </div>
 
                     {/* Valor da Taxa */}
                     <div className="sm:col-span-3">
-                      <label className="block text-[10px] font-semibold text-slate-500 uppercase">
+                      <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">
                         Taxa (R$)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1.5 text-xs text-slate-500 font-medium">
+                        <span className="absolute left-2.5 top-1.5 text-xs text-slate-400 dark:text-slate-400 font-medium">
                           R$
                         </span>
                         <input
@@ -289,14 +289,14 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                               parseFloat(e.target.value) || 0
                             )
                           }
-                          className="w-full text-xs font-bold font-mono-numbers bg-white border border-slate-300 rounded-lg pl-8 pr-2 py-1.5 text-orange-600 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                          className="w-full text-xs font-bold font-mono-numbers bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg pl-8 pr-2 py-1.5 text-orange-600 dark:text-orange-400 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                         />
                       </div>
                     </div>
 
                     {/* Descrição / Bairros */}
                     <div className="sm:col-span-3">
-                      <label className="block text-[10px] font-semibold text-slate-500 uppercase">
+                      <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">
                         Descrição / Bairros
                       </label>
                       <input
@@ -306,7 +306,7 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                         onChange={(e) =>
                           handleUpdateField(range.id, 'description', e.target.value)
                         }
-                        className="w-full text-xs bg-white border border-slate-300 rounded-lg p-1.5 text-slate-800 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                        className="w-full text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-1.5 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                       />
                     </div>
 
@@ -317,8 +317,8 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                         onClick={() => handleToggleActive(range.id)}
                         className={`text-[10px] font-bold px-1.5 py-1 rounded transition-colors ${
                           range.isActive
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-200 text-slate-500'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                            : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
                         }`}
                         title={range.isActive ? 'Bloco ativo' : 'Bloco inativo'}
                       >
@@ -336,7 +336,7 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                             handleDeleteRange(range.id);
                           }
                         }}
-                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
                         title="Excluir este bloco"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -349,10 +349,10 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
           </div>
 
           {/* Formulário Manual de Inserção de Novo Bloco */}
-          <div className="pt-4 border-t border-slate-100 bg-slate-50/50 p-4 rounded-xl">
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 rounded-xl">
             <div className="flex items-center gap-1.5 mb-2.5">
-              <Sparkles className="w-4 h-4 text-orange-600" />
-              <span className="text-xs font-bold text-slate-900">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-bold text-slate-900 dark:text-white">
                 Cadastrar Novo Bloco Personalizado de KM
               </span>
             </div>
@@ -362,7 +362,7 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
               className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 items-end"
             >
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                <label className="block text-[10px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                   KM Inicial
                 </label>
                 <input
@@ -372,13 +372,13 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                   placeholder="Ex: 8.0"
                   value={newMinKm}
                   onChange={(e) => setNewMinKm(e.target.value)}
-                  className="w-full text-xs bg-white border border-slate-300 rounded-lg p-2 text-slate-900"
+                  className="w-full text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-hidden"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                <label className="block text-[10px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                   KM Final
                 </label>
                 <input
@@ -388,13 +388,13 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                   placeholder="Ex: 12.0"
                   value={newMaxKm}
                   onChange={(e) => setNewMaxKm(e.target.value)}
-                  className="w-full text-xs bg-white border border-slate-300 rounded-lg p-2 text-slate-900"
+                  className="w-full text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-hidden"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                <label className="block text-[10px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                   Valor da Taxa (R$)
                 </label>
                 <input
@@ -404,13 +404,13 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                   placeholder="Ex: 15.00"
                   value={newPrice}
                   onChange={(e) => setNewPrice(e.target.value)}
-                  className="w-full text-xs bg-white border border-slate-300 rounded-lg p-2 text-slate-900 font-bold"
+                  className="w-full text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white font-bold focus:ring-1 focus:ring-amber-500 focus:outline-hidden"
                   required
                 />
               </div>
 
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                <label className="block text-[10px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                   Nome / Descrição
                 </label>
                 <input
@@ -418,14 +418,14 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                   placeholder="Ex: Bairros Afastados"
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full text-xs bg-white border border-slate-300 rounded-lg p-2 text-slate-900"
+                  className="w-full text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:ring-1 focus:ring-amber-500 focus:outline-hidden"
                 />
               </div>
 
               <div className="col-span-2 sm:col-span-1">
                 <button
                   type="submit"
-                  className="w-full h-9 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1 transition-colors shadow-xs"
+                  className="w-full h-9 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg flex items-center justify-center gap-1 transition-colors shadow-xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Inserir Bloco</span>
@@ -438,24 +438,24 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
         {/* Coluna 2: Regras de Excedente & Ponto de Origem Fixo (4 colunas) */}
         <div className="lg:col-span-4 space-y-4">
           {/* Card de Regra de Excedente */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-              <AlertCircle className="w-4 h-4 text-orange-600" />
-              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-3 transition-colors">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <AlertCircle className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                 KM Além da Última Faixa
               </span>
             </div>
 
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               Caso o cliente esteja mais longe do que o maior bloco cadastrado, o sistema cobra o valor da última faixa somado a este valor por KM excedente:
             </p>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Adicional por KM Excedente (R$/km)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-xs text-slate-500 font-medium">
+                <span className="absolute left-3 top-2 text-xs text-slate-400 dark:text-slate-500 font-medium">
                   R$
                 </span>
                 <input
@@ -469,20 +469,20 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                       extraKmRate: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full text-xs font-bold font-mono-numbers bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-slate-900 focus:bg-white focus:ring-2 focus:ring-orange-500"
+                  className="w-full text-xs font-bold font-mono-numbers bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-2 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                 />
               </div>
-              <span className="text-[11px] text-slate-400 mt-1 block">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
                 Ex: Se a última faixa termina em 10 km (R$ 15,00) e a entrega for de 12 km (+2 km), soma-se 2 × R$ {store.extraKmRate.toFixed(2)}.
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Taxa de Contingência (Se endereço falhar)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-xs text-slate-500 font-medium">
+                <span className="absolute left-3 top-2 text-xs text-slate-400 dark:text-slate-500 font-medium">
                   R$
                 </span>
                 <input
@@ -496,31 +496,31 @@ export const TabelaTaxasView: React.FC<TabelaTaxasViewProps> = ({
                       fallbackRate: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full text-xs font-bold font-mono-numbers bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-slate-900 focus:bg-white focus:ring-2 focus:ring-orange-500"
+                  className="w-full text-xs font-bold font-mono-numbers bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-2 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                 />
               </div>
             </div>
           </div>
 
-          {/* Configuração da Hamburgueria (Ponto de Origem Vila Guilhermina) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-              <MapPin className="w-4 h-4 text-orange-600" />
-              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+          {/* Configuração da Hamburgueria (Ponto de Origem) */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-3 transition-colors">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <MapPin className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                 Origem das Rotas
               </span>
             </div>
 
-            <div className="text-xs space-y-1.5 text-slate-600">
-              <div className="font-bold text-slate-900">{store.storeName}</div>
+            <div className="text-xs space-y-1.5 text-slate-600 dark:text-slate-300">
+              <div className="font-bold text-slate-900 dark:text-white">{store.storeName}</div>
               <div>{store.street}, {store.number} - {store.neighborhood}</div>
               <div>{store.city} - {store.state}, CEP {store.postalCode || '03542-060'}</div>
-              <div className="text-[11px] font-mono text-slate-400 pt-1">
+              <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500 pt-1">
                 Lat: {store.latitude} · Lng: {store.longitude}
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-500 border-t border-slate-100 pt-2">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2">
               Todas as distâncias viárias em KM são calculadas automaticamente a partir deste ponto via OSRM gratuito.
             </p>
           </div>

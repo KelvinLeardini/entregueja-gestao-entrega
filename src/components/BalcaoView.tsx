@@ -722,18 +722,6 @@ export const BalcaoView: React.FC<BalcaoViewProps> = ({
               <List className="w-3.5 h-3.5" />
               <span>Tabela Geral</span>
             </button>
-
-            {onNavigateToHistorico && (
-              <button
-                type="button"
-                onClick={onNavigateToHistorico}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
-                title="Abrir Histórico completo e Conferência de Caixa"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-amber-500" />
-                <span>Histórico & Caixa</span>
-              </button>
-            )}
           </div>
 
           <button
