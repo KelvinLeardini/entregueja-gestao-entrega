@@ -103,6 +103,9 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
 export const DEFAULT_RATE_RANGES: DeliveryRateRange[] = [
   {
     id: 'range_1',
+    minDistanceKm: 0.0,
+    maxDistanceKm: 3.0,
+    feeAmount: 6.0,
     minKm: 0.0,
     maxKm: 3.0,
     price: 6.0,
@@ -112,6 +115,9 @@ export const DEFAULT_RATE_RANGES: DeliveryRateRange[] = [
   },
   {
     id: 'range_2',
+    minDistanceKm: 3.1,
+    maxDistanceKm: 5.0,
+    feeAmount: 9.0,
     minKm: 3.1,
     maxKm: 5.0,
     price: 9.0,
@@ -121,6 +127,9 @@ export const DEFAULT_RATE_RANGES: DeliveryRateRange[] = [
   },
   {
     id: 'range_3',
+    minDistanceKm: 5.1,
+    maxDistanceKm: 8.0,
+    feeAmount: 13.0,
     minKm: 5.1,
     maxKm: 8.0,
     price: 13.0,
@@ -130,6 +139,9 @@ export const DEFAULT_RATE_RANGES: DeliveryRateRange[] = [
   },
   {
     id: 'range_4',
+    minDistanceKm: 8.1,
+    maxDistanceKm: 12.0,
+    feeAmount: 18.0,
     minKm: 8.1,
     maxKm: 12.0,
     price: 18.0,

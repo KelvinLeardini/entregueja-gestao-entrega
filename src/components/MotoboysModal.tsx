@@ -116,7 +116,7 @@ export const MotoboysView: React.FC<MotoboysViewProps> = ({
   };
 
   const handleShareWhatsApp = (courier: User) => {
-    const cleanPhone = courier.phone.replace(/\D/g, '');
+    const cleanPhone = (courier.phone || '').replace(/\D/g, '');
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const pin = courier.activePin || courier.authPin2FA || '123456';
     const directUrl = `${origin}/?motoToken=${courier.accessToken}&pin=${pin}`;

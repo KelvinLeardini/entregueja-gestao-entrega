@@ -7,226 +7,212 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum StoreStatus {
-  ACTIVE
-  TRIAL
-  SUSPENDED
-  MAINTENANCE
-}
-
-enum SegmentType {
-  BURGER
-  PIZZERIA
-  PHARMACY
-  RESTAURANT
-  MARKET
-}
-
 enum UserRole {
-  STORE_ADMIN
-  STORE_OPERATOR
-  COURIER
+  OWNER
+  OPERATOR
 }
 
-enum OrderStatus {
+enum DeliverySource {
+  MANUAL
+  IFOOD
+  NINETY_NINE_FOOD
+  KEETA
+  WHATSAPP
+}
+
+enum DeliveryStatus {
   PENDING
   PREPARING
   ASSIGNED
   OUT_FOR_DELIVERY
   DELIVERED
-  CANCELED_BEFORE_DELIVERY
-  CANCELED_AFTER_DELIVERY
+  CANCELLED
 }
 
-enum CalculationMode {
-  KM_DRIVEN
-  RADIAL
-  FIXED_ZONES
+enum CancellationType {
+  BEFORE_DEPARTURE
+  ON_SITE
+}
+
+enum SettlementStatus {
+  OPEN
+  PAID
+}
+
+enum ActorType {
+  USER
+  COURIER
+  SYSTEM
 }
 
 model Store {
-  id              String           @id @default(uuid())
-  slug            String           @unique // Ex: hardbeerburguer, phyto-formula
-  name            String
-  segment         SegmentType      @default(BURGER)
-  status          StoreStatus      @default(ACTIVE)
-  plan            String           @default("PRO") // ESSENCIAL, PRO, ENTERPRISE
-  ownerName       String
-  ownerPhone      String
-  ownerEmail      String
-  
-  // Endereço base de expedição para cálculo de rota OSRM
-  originAddress   String
-  originLat       Float?
-  originLng       Float?
+  id             String          @id @default(uuid())
+  slug           String          @unique
+  name           String
+  cnpj           String?
+  phone          String
+  originAddress  String
+  originLat      Float?
+  originLng      Float?
 
-  // Regras de cálculo logístico
-  calculationMode CalculationMode  @default(KM_DRIVEN)
-  defaultBaseFee  Float            @default(6.00)
-  defaultKmRate   Float            @default(1.50)
-  freeReturn      Boolean          @default(false)
-  allowBatching   Boolean          @default(true)
-  
-  // Credenciais de segurança da loja (PINs segregados)
-  storePin        String           @default("1234") // PIN Balcão
-  adminPin        String           @default("9876") // PIN Gestor Loja
-  
-  // Relacionamentos Multi-Tenant com isolamento estrito por storeId
-  users           User[]
-  couriers        Courier[]
-  orders          Order[]
-  rateRules       DeliveryRateRule[]
-  settlements     Settlement[]
-  webhookLogs     WebhookLog[]
-  addressCaches   AddressCache[]
+  users          User[]
+  couriers       Courier[]
+  deliveries     Delivery[]
+  rateRules      RateRule[]
+  settlements    Settlement[]
+  webhookConfigs WebhookConfig[]
+  auditEvents    AuditEvent[]
 
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([slug])
-  @@index([status])
 }
 
 model User {
-  id            String    @id @default(uuid())
-  storeId       String
-  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  name          String
-  email         String?
-  role          UserRole  @default(STORE_OPERATOR)
-  passwordHash  String?
-  createdAt     DateTime  @default(now())
+  id                  String    @id @default(uuid())
+  storeId             String
+  store               Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  email               String    @unique
+  passwordHash        String
+  role                UserRole  @default(OPERATOR)
+  active              Boolean   @default(true)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
 
-  @@unique([storeId, email])
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
   @@index([storeId])
 }
 
 model Courier {
-  id              String        @id @default(uuid())
-  storeId         String
-  store           Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  name            String
-  phone           String
-  pixKeyType      String        @default("PHONE") // CPF, PHONE, EMAIL, RANDOM
-  pixKey          String
-  vehiclePlate    String?
-  vehicleModel    String?
-  active          Boolean       @default(true)
-  
-  // Autenticação 2FA Isolada do Motoboy
-  motoToken       String        @unique @default(uuid())
-  activePin       String        @default("123456")
-  
-  orders          Order[]
-  settlements     SettlementItem[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                String       @id @default(uuid())
+  storeId           String
+  store             Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name              String
+  phone             String
+  vehiclePlate      String?
+  vehicleModel      String?
+  pixKeyType        String       @default("PHONE")
+  pixKey            String
+  active            Boolean      @default(true)
+  tokenHash         String       @unique
+  pinHash           String
+  pinFailedAttempts Int          @default(0)
+  pinLockedUntil    DateTime?
+  sessionVersion    Int          @default(1)
+
+  deliveries        Delivery[]
+  settlements       Settlement[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   @@index([storeId])
-  @@index([motoToken])
+  @@index([tokenHash])
 }
 
-model Order {
-  id              String       @id @default(uuid())
-  storeId         String
-  store           Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  courierId       String?
-  courier         Courier?     @relation(fields: [courierId], references: [id], onDelete: SetNull)
-  
-  orderNumber     String
-  customerName    String
-  customerPhone   String?
-  destination     String
-  destLat         Float?
-  destLng         Float?
-  
-  distanceKm      Float        @default(0.0)
-  durationMinutes Int          @default(0)
-  feeAmount       Float        @default(0.0)
-  platform        String       @default("MANUAL") // IFOOD, 99FOOD, KEETA, MANUAL
-  status          OrderStatus  @default(PENDING)
-  isFeePayable    Boolean      @default(false)
-  
-  createdAt       DateTime     @default(now())
-  dispatchedAt    DateTime?
-  deliveredAt     DateTime?
-  canceledAt      DateTime?
+model Delivery {
+  id               String            @id @default(uuid())
+  storeId          String
+  store            Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  courierId        String?
+  courier          Courier?          @relation(fields: [courierId], references: [id], onDelete: SetNull)
+  source           DeliverySource    @default(MANUAL)
+  externalId       String?
+  orderNumber      String
+  customerName     String
+  customerPhone    String?
+  street           String
+  number           String
+  neighborhood     String
+  city             String
+  state            String
+  distanceKm       Decimal           @db.Decimal(6, 2)
+  feeAmountCents   Int               @default(0)
+  status           DeliveryStatus    @default(PENDING)
+  isFeePayable     Boolean           @default(false)
+  deliveredAt      DateTime?
+  cancelledAt      DateTime?
+  cancellationType CancellationType?
 
-  settlementItemId String?     @unique
-  settlementItem   SettlementItem? @relation(fields: [settlementItemId], references: [id])
+  settlementId     String?
+  settlement       Settlement?       @relation(fields: [settlementId], references: [id], onDelete: SetNull)
 
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([storeId, source, externalId])
   @@index([storeId])
   @@index([courierId])
   @@index([createdAt])
   @@index([status])
 }
 
-model DeliveryRateRule {
-  id          String   @id @default(uuid())
-  storeId     String
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  minKm       Float
-  maxKm       Float
-  price       Float
-  description String?
-  orderIndex  Int      @default(1)
+model RateRule {
+  id         String   @id @default(uuid())
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  minKm      Decimal  @db.Decimal(6, 2)
+  maxKm      Decimal  @db.Decimal(6, 2)
+  feeCents   Int
+  orderIndex Int      @default(1)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([storeId])
 }
 
 model Settlement {
-  id          String           @id @default(uuid())
-  storeId     String
-  store       Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  weekStart   DateTime
-  weekEnd     DateTime
-  totalAmount Float            @default(0.0)
-  totalOrders Int              @default(0)
-  status      String           @default("OPEN") // OPEN, CLOSED, PAID
-  items       SettlementItem[]
-  createdAt   DateTime         @default(now())
+  id         String           @id @default(uuid())
+  storeId    String
+  store      Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  courierId  String
+  courier    Courier          @relation(fields: [courierId], references: [id], onDelete: Cascade)
+  weekStart  DateTime
+  weekEnd    DateTime
+  totalCents Int              @default(0)
+  status     SettlementStatus @default(OPEN)
+  paidAt     DateTime?
+
+  deliveries Delivery[]
+
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([courierId, weekStart])
+  @@index([storeId])
+}
+
+model WebhookConfig {
+  id               String   @id @default(uuid())
+  storeId          String
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  provider         String
+  secretCiphertext String
+  active           Boolean  @default(true)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([storeId])
 }
 
-model SettlementItem {
-  id           String      @id @default(uuid())
-  settlementId String
-  settlement   Settlement  @relation(fields: [settlementId], references: [id], onDelete: Cascade)
-  courierId    String
-  courier      Courier     @relation(fields: [courierId], references: [id], onDelete: Cascade)
-  orderCount   Int         @default(0)
-  totalFee     Float       @default(0.0)
-  bonusAmount  Float       @default(0.0)
-  paidAt       DateTime?
-  order        Order?
+model AuditEvent {
+  id         String    @id @default(uuid())
+  storeId    String
+  store      Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  actorType  ActorType
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
 
-  @@index([settlementId])
-  @@index([courierId])
-}
-
-model WebhookLog {
-  id          String   @id @default(uuid())
-  storeId     String
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  source      String   // IFOOD, 99FOOD, WHATSAPP, MANUAL
-  payload     Json
-  status      String   // SUCCESS, FAILED
-  processedAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([storeId])
-}
-
-model AddressCache {
-  id              String   @id @default(uuid())
-  storeId         String
-  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  normalizedQuery String
-  lat             Float
-  lng             Float
-  distanceKm      Float
-  durationMinutes Int
-  createdAt       DateTime @default(now())
-
-  @@index([storeId, normalizedQuery])
+  @@index([createdAt])
 }

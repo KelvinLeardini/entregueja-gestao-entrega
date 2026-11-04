@@ -1,6 +1,6 @@
 {
-  "summary":  "Plano de implementação para o módulo de checkout profissional com integração Asaas, planos Essencial (R$ 30), Profissional (R$ 50) e Turbo (R$ 70), período de 7 dias de teste grátis, geração automática do link exclusivo do cliente e inclusão no Dev Admin Portal.",
-  "updatedAt":  "2026-10-30T18:23:53.072305325Z",
-  "requestFeedback":  true,
-  "userFacing":  true
+  "summary": "Plano de implementação detalhado para a Fase 1 do EntregueJá, cobrindo o novo schema Prisma (PostgreSQL) com centavos e Decimal, autenticação de lojistas com NextAuth v5/bcryptjs, isolamento multi-tenant estrito com resposta 404, acesso seguro de motoboy via link com token SHA-256 e PIN de 6 dígitos com jose, e suíte de testes automatizados com Vitest.",
+  "updatedAt": "2026-11-04T18:03:41.979050914Z",
+  "requestFeedback": true,
+  "userFacing": true
 }

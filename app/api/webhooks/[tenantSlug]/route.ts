@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ActorType, DeliverySource } from '@prisma/client';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { tenantSlug: string } }
+  { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
-  const { tenantSlug } = params;
+  const { tenantSlug } = await params;
 
   try {
-    // 1. Localiza a loja no banco pelo tenantSlug
     const store = await prisma.store.findUnique({
       where: { slug: tenantSlug },
     });
@@ -22,37 +24,45 @@ export async function POST(
 
     const payload = await req.json();
 
-    // 2. Registra o log de webhook no Prisma
-    await prisma.webhookLog.create({
-      data: {
-        storeId: store.id,
-        source: payload.source || 'IFOOD',
-        payload: payload,
-        status: 'SUCCESS',
-      },
-    });
-
-    // 3. Processa e cria o pedido vinculado exclusivamente a esse storeId
-    const createdOrder = await prisma.order.create({
+    const createdDelivery = await prisma.delivery.create({
       data: {
         storeId: store.id,
         orderNumber: payload.orderNumber || 'PED-' + Math.floor(1000 + Math.random() * 9000),
-        customerName: payload.customer?.name || 'Cliente iFood',
+        source: DeliverySource.IFOOD,
+        externalId: payload.externalId || payload.orderId || null,
+        customerName: payload.customer?.name || 'Cliente App',
         customerPhone: payload.customer?.phone || null,
-        destination: payload.deliveryAddress?.street
-          ? `${payload.deliveryAddress.street}, ${payload.deliveryAddress.number} - ${payload.deliveryAddress.neighborhood}`
-          : 'Endereço Balcão',
-        distanceKm: Number(payload.distanceKm) || 0,
-        feeAmount: Number(payload.feeAmount) || store.defaultBaseFee,
-        platform: payload.source || 'IFOOD',
+        street: payload.deliveryAddress?.street || 'Rua Principal',
+        number: payload.deliveryAddress?.number || 'S/N',
+        neighborhood: payload.deliveryAddress?.neighborhood || 'Bairro',
+        city: payload.deliveryAddress?.city || 'São Paulo',
+        state: payload.deliveryAddress?.state || 'SP',
+        distanceKm: Number(payload.distanceKm) || 2.5,
+        feeAmountCents: Math.round((Number(payload.feeAmount) || 6.0) * 100),
         status: 'PENDING',
+        isFeePayable: false,
+      },
+    });
+
+    await prisma.auditEvent.create({
+      data: {
+        storeId: store.id,
+        actorType: ActorType.SYSTEM,
+        actorId: 'webhook-ingestion',
+        action: 'WEBHOOK_DELIVERY_CREATED',
+        entityType: 'Delivery',
+        entityId: createdDelivery.id,
+        metadata: {
+          source: 'IFOOD',
+          orderNumber: createdDelivery.orderNumber,
+        },
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: `Pedido ${createdOrder.orderNumber} integrado ao comércio ${store.name}`,
-      orderId: createdOrder.id,
+      message: `Entrega ${createdDelivery.orderNumber} integrada ao comércio ${store.name}`,
+      deliveryId: createdDelivery.id,
     });
   } catch (error: any) {
     console.error('Erro no webhook multi-tenant:', error);

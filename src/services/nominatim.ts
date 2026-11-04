@@ -1,109 +1,74 @@
-import { GeoPoint } from '../types';
+import { Coordinates } from './osrm';
 
-interface NominatimParams {
+export interface GeocodeQuery {
   street: string;
-  number: string;
+  number?: string;
   neighborhood: string;
   city: string;
   state: string;
 }
 
-/**
- * Normaliza um endereço para servir de chave de cache determinística
- */
-export function normalizeAddressQuery(params: NominatimParams): string {
-  return `${params.street} ${params.number} ${params.neighborhood} ${params.city} ${params.state}`
+export function normalizeAddressQuery(query: GeocodeQuery): string {
+  const parts = [
+    query.street,
+    query.number || '',
+    query.neighborhood,
+    query.city,
+    query.state,
+    'Brasil',
+  ];
+  return parts
+    .filter(Boolean)
+    .join(', ')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/g, ' ')
-    .replace(/\s+/g, ' ')
     .trim();
 }
 
 /**
- * Geocodifica um endereço usando a API pública gratuita do Nominatim (OpenStreetMap)
+ * Geocodifica endereços utilizando a API pública do Nominatim OpenStreetMap.
+ * Respeita a exigência de User-Agent identificado configurável via NOMINATIM_USER_AGENT.
  */
-export async function geocodeAddress(params: NominatimParams): Promise<GeoPoint | null> {
-  const { street, number, neighborhood, city, state } = params;
+export async function geocodeAddress(query: GeocodeQuery): Promise<Coordinates | null> {
+  const normalized = normalizeAddressQuery(query);
+  const userAgent =
+    process.env.NOMINATIM_USER_AGENT ||
+    'EntregueJa-DeliverySaaS/1.0 (contato@entregueja.com.br)';
 
-  if (!street.trim()) return null;
-
-  // Consulta estruturada com número e rua
-  const streetWithNumber = number.trim() ? `${street.trim()}, ${number.trim()}` : street.trim();
-  const searchParams = new URLSearchParams({
-    street: streetWithNumber,
-    city: city.trim(),
-    county: neighborhood.trim(),
-    state: state.trim(),
-    country: 'Brazil',
-    format: 'json',
-    limit: '1',
-    addressdetails: '1',
-  });
-
-  const url = `https://nominatim.openstreetmap.org/search?${searchParams.toString()}`;
+  const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+    normalized
+  )}&limit=1&addressdetails=1`;
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    const response = await fetch(endpoint, {
       headers: {
-        'Accept': 'application/json',
-        'Accept-Language': 'pt-BR,pt;q=0.9',
+        'User-Agent': userAgent,
+        Accept: 'application/json',
       },
-      signal: AbortSignal.timeout(4500),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
-    if (response.ok) {
-      const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
-        return {
-          latitude: parseFloat(data[0].lat),
-          longitude: parseFloat(data[0].lon),
-          displayName: data[0].display_name,
-        };
-      }
+    if (!response.ok) {
+      return null;
     }
 
-    // Fallback 1: Busca em formato livre (q=...) caso a busca estruturada seja restritiva demais
-    const freeTextQuery = `${street}, ${number ? number + ',' : ''} ${neighborhood}, ${city} - ${state}, Brasil`;
-    const freeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(freeTextQuery)}&format=json&limit=1&countrycodes=br`;
-    
-    const freeResp = await fetch(freeUrl, {
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(3500),
-    });
-
-    if (freeResp.ok) {
-      const freeData = await freeResp.json();
-      if (Array.isArray(freeData) && freeData.length > 0) {
-        return {
-          latitude: parseFloat(freeData[0].lat),
-          longitude: parseFloat(freeData[0].lon),
-          displayName: freeData[0].display_name,
-        };
-      }
+    const results = await response.json();
+    if (!results || results.length === 0) {
+      return null;
     }
 
-    // Fallback 2: Busca por Bairro + Cidade caso a rua seja recém-criada ou com grafia divergente
-    if (neighborhood.trim()) {
-      const neighUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${neighborhood}, ${city}, ${state}`)}&format=json&limit=1&countrycodes=br`;
-      const neighResp = await fetch(neighUrl, { signal: AbortSignal.timeout(3000) });
-      if (neighResp.ok) {
-        const neighData = await neighResp.json();
-        if (Array.isArray(neighData) && neighData.length > 0) {
-          return {
-            latitude: parseFloat(neighData[0].lat),
-            longitude: parseFloat(neighData[0].lon),
-            displayName: `${neighborhood}, ${city} (Aproximado por Bairro)`,
-          };
-        }
-      }
-    }
-
-    return null;
+    const first = results[0];
+    return {
+      latitude: parseFloat(first.lat),
+      longitude: parseFloat(first.lon),
+    };
   } catch (error) {
-    console.warn('[Nominatim Warning - Rede ou Timeout]:', error);
+    console.warn('Falha na geocodificação Nominatim:', error);
     return null;
   }
 }

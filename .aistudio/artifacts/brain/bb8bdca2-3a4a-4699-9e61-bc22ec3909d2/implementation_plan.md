@@ -1,147 +1,338 @@
-# Sistema Profissional de Assinaturas & Checkout com Integração Asaas
+# EntregueJá · Fase 1: Modelo de Dados e Autenticação
 
-Implementação do fluxo completo de checkout profissional com gestão de assinaturas recorrentes via Asaas (Pix com QR Code, Cartão de Crédito e Boleto), contemplando os planos Essencial (R$ 30), Profissional (R$ 50) e Turbo (R$ 70), 7 dias de degustação gratuita sem cobrança imediata, geração instantânea da URL exclusiva do restaurante (`/[slug]`) e provisionamento automático no portal do desenvolvedor (`/dev-admin-portal`).
+Implementação da camada central de dados relacionais e segurança do EntregueJá, estabelecendo o schema PostgreSQL no Prisma com valores em centavos, autenticação de lojistas via Auth.js (NextAuth v5), isolamento estrito entre lojas com resposta 404 e portal do motoboy seguro por link com hash SHA-256 e PIN de 6 dígitos assinado com jose.
 
 ---
 
-## Revisão do Usuário & Decisões Confirmadas
+### Decisões Confirmadas & Portões de Revisão
 
 > [!IMPORTANT]
-> As decisões principais levantadas na etapa de alinhamento foram consolidadas abaixo conforme confirmado com o cliente:
-
-- **Provedor de Pagamento Homologado**: Integração com Asaas para cobranças recorrentes via Pix instantâneo, Cartão de Crédito com verificação de segurança e Boleto Bancário.
-- **Grade e Precificação dos Planos**:
-  1. **Essencial**: R$ 30,00/mês — voltado para operações individuais ou até 3 motoboys.
-  2. **Profissional**: R$ 50,00/mês — motoboys ilimitados, fechamento semanal PIX e portal do motoboy com 2FA.
-  3. **Turbo**: R$ 70,00/mês — todas as integrações de PDV/iFood/99Food, múltiplos balcões e suporte prioritário.
-- **Trial de 7 Dias**: Liberação imediata de acesso completo com 7 dias de teste gratuito antes do débito da primeira fatura.
-- **Onboarding Pós-Pagamento & Dev Portal**: Imediatamente após a confirmação do checkout, o sistema gera a URL exclusiva da loja (`https://dominio.com/[slug]`), entrega os links de acesso rápido (Balcão, Gestão e Motoboy) e cadastra a nova unidade automaticamente no banco de dados de tenants gerenciado pelo Super Admin Dev (`/dev-admin-portal`).
+> **Decisões arquiteturais alinhadas com o usuário**:
+> - **Biblioteca de Hashing**: `bcryptjs` para hashes de senha (`passwordHash`) e PIN (`pinHash`), garantindo máxima compatibilidade sem depender de compilação C++ nativa no runtime.
+> - **Autenticação de Lojistas e Operadores**: NextAuth v5 (Auth.js) utilizando Credentials Provider com tokens JWT em cookies `httpOnly`, `sameSite: "lax"` e `secure` em produção.
+> - **Isolamento Multi-Tenant**: O slug na URL (`/[slug]`) localiza a loja, mas toda autorização é ancorada no `storeId` da sessão autenticada. Acessos cruzados retornam HTTP 404 para evitar enumeração de estabelecimentos.
+> - **Acesso do Motoboy**: Rota `/motoboy/[token]` onde `token` é verificado via SHA-256 (`tokenHash`), seguido por desafio de PIN de 6 dígitos (`pinHash`). Após 5 erros, bloqueio de 15 minutos registrado no banco. Sucesso emite cookie `httpOnly` assinado via `jose` com validade de 12 horas, atrelado a `courierId` e `sessionVersion`.
 
 ---
 
-## 1. Visão Geral & Conceito do Produto
+## 1. Visão Geral & Escopo
 
-- **O que faz**: Permite que donos de hamburguerias, pizzarias, farmácias e restaurantes assinem a plataforma de forma autônoma e segura. Na tela de checkout `/assinar`, o cliente informa os dados cadastrais (Razão Social/Nome, CNPJ/CPF, WhatsApp, e-mail, endereço da loja para cálculo das rotas OSRM e slug exclusivo), escolhe seu plano e o meio de pagamento.
-- **Público-Alvo**: Estabelecimentos comerciais com entregas próprias que buscam eliminar atritos no fechamento de motoboys e profissionalizar sua logística.
-- **Proposta de Valor**: Transparência financeira total, barreira de entrada zero com 7 dias grátis, checkout ágil sem burocracia e ativação imediata do sistema sem intervenção manual.
-
----
-
-## 2. Experiência do Usuário & Design Visual
-
-### Fluxos Principais do Usuário
-
-1. **Escolha na Landing Page**:
-   - A seção de preços na Landing Page exibe os novos valores (R$ 30, R$ 50 e R$ 70) com o selo visual "7 Dias Grátis - Cancele quando quiser".
-   - Botões "Assinar Plano" e "Começar 7 Dias Grátis" direcionam para `/assinar?plano=[essencial|profissional|turbo]`.
-
-2. **Página de Checkout Profissional (`/assinar`)**:
-   - **Etapa 1: Dados do Negócio**: Nome do comércio, segmento comercial (Hamburgueria, Pizzaria, etc.), responsável, WhatsApp, e-mail, CNPJ/CPF e definição da URL exclusiva (`/[slug]`) com validação em tempo real de disponibilidade.
-   - **Etapa 2: Endereço de Origem**: Endereço base da loja com preenchimento assistido para cálculo das rotas e km dos motoboys.
-   - **Etapa 3: Seleção do Plano & Faturamento**: Seletor dinâmico dos 3 planos com destaque para os 7 dias grátis ("Primeira cobrança de R$ [valor] apenas em [Data daqui a 7 dias]").
-   - **Etapa 4: Método de Pagamento Asaas**:
-     - *PIX*: Geração de QR Code dinâmico e código Pix Copia e Cola, com contador regressivo e detecção de status.
-     - *Cartão de Crédito*: Campos para número do cartão, titular, validade e CVV com máscara, bandeira automática e botão de preenchimento para teste de homologação.
-     - *Boleto Bancário*: Linha digitável e opção de visualização.
-
-3. **Tela de Boas-Vindas & Entrega de Acessos**:
-   - Feedback visual de sucesso informando que o período de 7 dias de teste está ativo.
-   - Card com a URL da loja gerada com 1 clique para copiar (`https://app.../[slug]`).
-   - Botões diretos para abrir o Balcão de Pedidos, Painel do Gestor ou enviar o link do portal para o WhatsApp do restaurante.
-
-4. **Painel do Desenvolvedor (`/dev-admin-portal`)**:
-   - A nova loja aparece instantaneamente na listagem de tenants.
-   - Badges visuais indicando: Plano (Essencial R$ 30, Pro R$ 50, Turbo R$ 70), Status (`TRIAL`), contagem regressiva dos 7 dias e identificadores do Asaas.
-   - Botão para impersonar a loja diretamente com privilégios de super admin.
-
-### Identidade Visual & Diretrizes de Estilo
-- **Paleta de Cores**: Fundo neutro Slate (`bg-slate-950` / `bg-slate-900` no dark mode e `bg-slate-50` / `bg-white` no light mode), realces em Amber (`amber-500` / `amber-400`) e Emerald para validações financeiras (`emerald-500`).
-- **Tipografia**: Hierarquia balanceada com fontes modernas sans-serif e números tabulares (`font-mono tabular-nums`) em todos os valores monetários e contadores.
-- **Zero-Pill Discipline**: Metadados limpos sem sobreposição de pílulas visuais genéricas.
+A Fase 1 estabelece a fundação de segurança e dados do EntregueJá. O sistema elimina qualquer suposição em memória e passa a persistir e autorizar todas as operações com base no PostgreSQL:
+- **Lojista/Operador**: Gerencia balcão, entregas, taxas e motoboys sob sua loja exclusiva.
+- **Motoboy**: Acessa suas corridas em `/motoboy/[token]` sem credenciais visíveis na URL, conferindo valores e status após autenticação por PIN.
+- **Auditoria**: Registro imutável de eventos (`AuditEvent`) para ações sensíveis de usuários, motoboys e webhooks.
 
 ---
 
-## 3. Decisões do Produto & Trade-Offs
+## 2. Experiência do Usuário & Telas
 
-- **Arquitetura de Assinatura Asaas**:
-  - *Decisão*: Utilizar criação de cliente (`/api/v3/customers`) e assinatura recorrente (`/api/v3/subscriptions`) com parâmetro `nextDueDate` programado exatamente para 7 dias à frente.
-  - *Vantagem*: Garante o início imediato das operações sem cobrar o comerciante no dia 1, reduzindo a fricção e mantendo a cobrança automatizada após a degustação.
-- **Multi-Tenant e Persistência**:
-  - *Decisão*: Salvar o novo tenant imediatamente no registro de tenants (`saveTenants`), inicializar as estruturas isoladas (`tenant_[slug]_*`) e sincronizar com o backend `/api/tenants`.
-  - *Vantagem*: O cliente não depende de recarregamento e pode começar a lançar entregas instantaneamente, enquanto o Dev Admin enxerga o novo cliente em tempo real.
-- **Ambiente de Teste / Simulação Segura**:
-  - *Decisão*: Fornecer no checkout um seletor de "Modo de Homologação Asaas" (Sandbox/Produção) com preenchimento rápido de cartões de teste e chave Pix fictícia gerada para testes imediatos sem exigir transações reais em contas de produção durante a avaliação.
+### A. Fluxos de Interface
+1. **Login do Lojista (`/login`)**:
+   - Formulário limpo com e-mail e senha.
+   - Mensagem de erro neutra: `"E-mail ou senha incorretos."` (sem revelar se o e-mail existe no sistema).
+   - Bloqueio temporário após 5 tentativas incorretas.
+   - Redirecionamento automático para `/[slug]` correspondente à loja do usuário.
+
+2. **Portal Seguro do Motoboy (`/motoboy/[token]`)**:
+   - Tela de desafio numérico para digitação do PIN de 6 dígitos.
+   - Feedback de tentativas restantes (`"PIN incorreto. Tentativa 2 de 5"`).
+   - Ao atingir 5 falhas, bloqueio exibindo contador regressivo de 15 minutos baseado em `pinLockedUntil`.
+   - Ao autenticar com sucesso, cookie `moto_session` emitido e redirecionamento para o dashboard de entregas do motoboy.
+
+3. **Geração e Redefinição de Link do Motoboy**:
+   - No painel da loja, o lojista gera um novo link. Um token aleatório criptográfico de 32 bytes é gerado, e a tela exibe o link completo uma única vez.
+   - O banco salva exclusivamente `SHA256(token)`.
+   - Redefinição de PIN pelo lojista salva apenas o novo `bcrypt.hash(pin)`.
 
 ---
 
-## 4. Arquitetura Técnica & Estratégia de Dados
+## 3. Decisões de Produto & Arquitetura de Dados
 
-### Diagrama do Sistema
+### A. Tipagem Financeira e Distância
+- **Valores Monetários**: Sempre `Int` em centavos (`feeAmountCents`, `totalCents`, `feeCents`) para evitar erros de ponto flutuante em operações contábeis.
+- **Distância**: `Decimal(6, 2)` para quilômetros (`distanceKm`, `minKm`, `maxKm`), permitindo precisão decimal exata.
+
+### B. Segregação e Proteção contra Enumeração
+- Todas as rotas autenticadas validam se o `storeId` da sessão coincide com o `id` da loja vinculada ao `slug` da rota.
+- Se houver divergência, a resposta é `404 Not Found`.
+
+---
+
+## 4. Arquitetura Técnica & Modelo de Dados
+
+### A. Diagrama de Arquitetura e Fluxo de Autenticação
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                             ENTREGUEJÁ SAAS                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-          ┌───────────────────────────┴───────────────────────────┐
-          ▼                                                       ▼
-┌───────────────────┐                                   ┌───────────────────┐
-│   Landing Page    │                                   │ Dev Admin Portal  │
-│    (Preços 30,    │                                   │ (/dev-admin-portal│
-│    50 e 70 R$)    │                                   │  Gestão Tenants)  │
-└─────────┬─────────┘                                   └─────────▲─────────┘
-          │ (Clique "Assinar Plano")                              │
-          ▼                                                       │
-┌─────────────────────────────────────────────────────────┐       │
-│           CheckoutAssinaturaView (/assinar)             │       │
-│  - Cadastro Loja (CNPJ, Nome, Endereço, Slug)           │       │
-│  - Seleção de Plano (Essencial, Pro, Turbo)             │       │
-│  - Período de 7 dias grátis (nextDueDate = now + 7d)    │       │
-│  - Gateway Asaas (Pix QR Code, Cartão, Boleto)          │       │
-└───────────────────────────┬─────────────────────────────┘       │
-                            │                                     │
-                            ▼                                     │
-┌─────────────────────────────────────────────────────────┐       │
-│                 Serviço Asaas Client                    │       │
-│                (src/services/asaas.ts)                  │       │
-│  - createAsaasCustomer(data)                            │       │
-│  - createRecurringSubscription(plan, method, trialDays) │       │
-│  - generatePixQrCode() / tokenizeCard()                 │       │
-└───────────────────────────┬─────────────────────────────┘       │
-                            │                                     │
-                            ▼ (Sucesso da Assinatura)             │
-┌─────────────────────────────────────────────────────────┐       │
-│              Provisionamento de Tenant                  │───────┘
-│  - createTenant({ slug, plan, trialEndsAt, ... })       │  (Aparece no
-│  - saveTenantScopedData(slug, { config, rates... })     │   Painel Dev)
-│  - Gera URL: https://app.../[slug]                      │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│                Tela de Conclusão & Links                │
-│  - Link Balcão: /[slug]?role=balcao                     │
-│  - Link Gestão: /[slug]?role=admin                      │
-│  - Compartilhamento WhatsApp para a Loja                │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Navegador / Cliente                             │
+└──────────────┬──────────────────────────────────────────┬──────────────┘
+               │                                          │
+   Cookie NextAuth (Lojista)                   Cookie jose (Motoboy)
+   [authjs.session-token]                      [moto_session]
+               │                                          │
+               ▼                                          ▼
+┌──────────────────────────────────────┐  ┌──────────────────────────────┐
+│  Next.js Middleware & Auth.js        │  │  /motoboy/[token] Rota       │
+│  - Valida JWT da sessão              │  │  - Valida SHA256(token)      │
+│  - Checa storeId vs /[slug]          │  │  - Valida PIN (bcrypt)       │
+│  - Incompatível? Retorna 404         │  │  - Checa sessionVersion      │
+└──────────────┬───────────────────────┘  └──────────────┬───────────────┘
+               │                                         │
+               ▼                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Prisma ORM (PostgreSQL)                         │
+│  Store · User · Courier · Delivery · RateRule · Settlement · Audit     │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Componentes e Módulos Previstos
+### B. Modelos Prisma (`prisma/schema.prisma`)
 
-1. **`src/types/index.ts`**:
-   - Atualização do tipo `TenantStore`: suporte a planos `'ESSENCIAL' | 'PROFISSIONAL' | 'TURBO'`, campos de `trialEndsAt`, `asaasCustomerId`, `asaasSubscriptionId`, `billingStatus`.
-2. **`src/services/asaas.ts`**:
-   - Estruturas de dados da API Asaas (Cliente, Assinatura, Cobrança, QR Code Pix).
-   - Mock/Proxy de homologação e emissão de assinaturas com vencimento para +7 dias.
-3. **`src/components/CheckoutAssinaturaView.tsx`**:
-   - Interface completa e responsiva do checkout em 3 etapas com validação de campos brasileiros (máscaras de CNPJ/CPF, WhatsApp, CEP).
-   - Resumo claro do plano com contagem regressiva dos 7 dias gratuitos.
-   - Telas de pagamento para Pix, Cartão e Boleto.
-   - Tela final com os links diretos da loja criada.
-4. **`src/components/LandingPage.tsx`**:
-   - Ajuste dos cards de planos: Essencial (R$ 30), Profissional (R$ 50) e Turbo (R$ 70).
-   - Botões direcionando para a nova rota de assinatura.
-5. **`src/components/DevAdminView.tsx`**:
-   - Exibição destacada do selo "TRIAL (X dias restantes)", plano assinado e código Asaas de cada comércio.
-6. **`src/App.tsx`**:
-   - Registro da rota `/assinar` e `/checkout`, com suporte ao parâmetro de URL `?plano=...`.
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  OWNER
+  OPERATOR
+}
+
+enum DeliverySource {
+  MANUAL
+  IFOOD
+  NINETY_NINE_FOOD
+  KEETA
+  WHATSAPP
+}
+
+enum DeliveryStatus {
+  PENDING
+  PREPARING
+  ASSIGNED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum CancellationType {
+  BEFORE_DEPARTURE
+  ON_SITE
+}
+
+enum SettlementStatus {
+  OPEN
+  PAID
+}
+
+enum ActorType {
+  USER
+  COURIER
+  SYSTEM
+}
+
+model Store {
+  id            String          @id @default(uuid())
+  slug          String          @unique
+  name          String
+  cnpj          String?
+  phone         String
+  originAddress String
+  originLat     Float?
+  originLng     Float?
+
+  users         User[]
+  couriers      Courier[]
+  deliveries    Delivery[]
+  rateRules     RateRule[]
+  settlements   Settlement[]
+  webhookConfigs WebhookConfig[]
+  auditEvents   AuditEvent[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([slug])
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  storeId            String
+  store              Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  email              String    @unique
+  passwordHash       String
+  role               UserRole  @default(OPERATOR)
+  active             Boolean   @default(true)
+  failedLoginAttempts Int      @default(0)
+  lockedUntil        DateTime?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([storeId])
+}
+
+model Courier {
+  id                String       @id @default(uuid())
+  storeId           String
+  store             Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name              String
+  phone             String
+  vehiclePlate      String?
+  vehicleModel      String?
+  pixKeyType        String       @default("PHONE")
+  pixKey            String
+  active            Boolean      @default(true)
+  tokenHash         String       @unique
+  pinHash           String
+  pinFailedAttempts Int          @default(0)
+  pinLockedUntil    DateTime?
+  sessionVersion    Int          @default(1)
+
+  deliveries        Delivery[]
+  settlements       Settlement[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([storeId])
+  @@index([tokenHash])
+}
+
+model Delivery {
+  id               String            @id @default(uuid())
+  storeId          String
+  store            Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  courierId        String?
+  courier          Courier?          @relation(fields: [courierId], references: [id], onDelete: SetNull)
+  source           DeliverySource    @default(MANUAL)
+  externalId       String?
+  orderNumber      String
+  customerName     String
+  customerPhone    String?
+  street           String
+  number           String
+  neighborhood     String
+  city             String
+  state            String
+  distanceKm       Decimal           @db.Decimal(6, 2)
+  feeAmountCents   Int               @default(0)
+  status           DeliveryStatus    @default(PENDING)
+  isFeePayable     Boolean           @default(false)
+  deliveredAt      DateTime?
+  cancelledAt      DateTime?
+  cancellationType CancellationType?
+
+  settlementId     String?
+  settlement       Settlement?       @relation(fields: [settlementId], references: [id], onDelete: SetNull)
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([storeId, source, externalId])
+  @@index([storeId])
+  @@index([courierId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model RateRule {
+  id         String   @id @default(uuid())
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  minKm      Decimal  @db.Decimal(6, 2)
+  maxKm      Decimal  @db.Decimal(6, 2)
+  feeCents   Int
+  orderIndex Int      @default(1)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([storeId])
+}
+
+model Settlement {
+  id         String           @id @default(uuid())
+  storeId    String
+  store      Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  courierId  String
+  courier    Courier          @relation(fields: [courierId], references: [id], onDelete: Cascade)
+  weekStart  DateTime
+  weekEnd    DateTime
+  totalCents Int              @default(0)
+  status     SettlementStatus @default(OPEN)
+  paidAt     DateTime?
+
+  deliveries Delivery[]
+
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([courierId, weekStart])
+  @@index([storeId])
+}
+
+model WebhookConfig {
+  id               String   @id @default(uuid())
+  storeId          String
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  provider         String
+  secretCiphertext String
+  active           Boolean  @default(true)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([storeId])
+}
+
+model AuditEvent {
+  id         String    @id @default(uuid())
+  storeId    String
+  store      Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  actorType  ActorType
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+
+  createdAt  DateTime  @default(now())
+
+  @@index([storeId])
+  @@index([createdAt])
+}
+```
+
+---
+
+## 5. Suíte de Testes Automatizados (Fase 1)
+
+Os testes serão implementados em `tests/unit/auth-isolation.test.ts` e `tests/unit/courier-access.test.ts`:
+1. **Isolamento de Lojas**: Usuário com sessão da Loja A tentando acessar dados da Loja B recebe `404 Not Found`.
+2. **Motoboy Desativado**: Sessão com `active: false` é rejeitada imediatamente com `401 Unauthorized`.
+3. **Invalidação por sessionVersion**: Quando o token é regenerado ou o motoboy é desativado, `sessionVersion` é incrementada e o cookie anterior é recusado.
+4. **Bloqueio de PIN (Rate Limiting no Banco)**: 5 tentativas incorretas resultam em bloqueio por 15 minutos persistido no campo `pinLockedUntil`.
+5. **Higienização de Respostas**: Nenhuma resposta pública ou autenticada expõe `tokenHash`, `pinHash` ou `pinFailedAttempts`.
+
+---
+
+## 6. Plano de Execução Passo a Passo
+
+1. Atualizar `prisma/schema.prisma` com os modelos estritos e rodar `npx prisma generate`.
+2. Implementar utilitários criptográficos (`src/lib/crypto.ts`):
+   - Hashing e comparação de senhas e PINs via `bcryptjs`.
+   - Hashing SHA-256 para tokens de link.
+   - Criptografia simétrica AES-256-GCM para webhooks com `WEBHOOK_ENCRYPTION_KEY`.
+   - Assinatura e verificação de JWT do motoboy via `jose`.
+3. Configurar Auth.js (NextAuth v5) com Credentials Provider em `src/lib/auth.ts` e `app/api/auth/[...nextauth]/route.ts`.
+4. Implementar rotas do motoboy:
+   - `app/motoboy/[token]/page.tsx` (desafio de PIN numérico com design limpo sem pills).
+   - `app/api/motoboy/verify-pin/route.ts` (validação com bloqueio após 5 falhas e emissão do cookie assinado).
+5. Configurar `middleware.ts` para proteção multi-tenant com resposta 404 em caso de incompatibilidade de loja.
+6. Atualizar `prisma/seed.ts` com loja demo (`hardbeerburguer`), lojista e motoboy com credenciais exibidas apenas no console do seed.
+7. Implementar e executar todos os testes da Fase 1 (`npm test`), seguidos por `npm run lint` e `npm run build`.

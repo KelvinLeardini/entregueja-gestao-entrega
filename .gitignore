@@ -1,11 +1,18 @@
-node_modules/
-build/
-dist/
-coverage/
-.DS_Store
+# Dependências e compilação
+node_modules
+.next
+dist
 *.log
-.env*
+
+# Variáveis de ambiente
+.env
+.env.*
 !.env.example
-.vscode/
-playwright-report/
-test-results/
+
+# Dados locais
+data/
+
+# Relatórios de testes e cobertura
+playwright-report
+test-results
+coverage

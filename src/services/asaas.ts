@@ -3,6 +3,8 @@
 // Documentação: https://docs.asaas.com/reference/criar-nova-assinatura
 // ============================================================================
 
+import { loadAsaasConfig } from './asaasConfig';
+
 export type AsaasPlanId = 'ESSENCIAL' | 'PROFISSIONAL' | 'TURBO';
 export type AsaasBillingType = 'PIX' | 'CREDIT_CARD' | 'BOLETO';
 
@@ -156,8 +158,12 @@ export async function createAsaasCustomer(data: AsaasCustomerInput): Promise<{ i
  * Gera código Pix e QR Code simulado com dados reais para o período ou cobrança
  */
 function generatePixData(value: number, storeName: string, subscriptionId: string) {
+  const asaasConfig = loadAsaasConfig();
   const cleanStore = storeName.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15) || 'ENTREGUEJA';
-  const payload = `00020126580014BR.GOV.BCB.PIX0136asaas-sub-${subscriptionId}@entregueja.com.br520400005303986540${value.toFixed(2)}5802BR59${cleanStore.length.toString().padStart(2, '0')}${cleanStore}6009SAO PAULO62070503***6304ABCD`;
+  const customPixKey = asaasConfig.defaultPixKey
+    ? asaasConfig.defaultPixKey.replace(/[^a-zA-Z0-9@._-]/g, '')
+    : `asaas-sub-${subscriptionId}@entregueja.com.br`;
+  const payload = `00020126580014BR.GOV.BCB.PIX0136${customPixKey}520400005303986540${value.toFixed(2)}5802BR59${cleanStore.length.toString().padStart(2, '0')}${cleanStore}6009SAO PAULO62070503***6304ABCD`;
 
   // Gera um SVG inline estilizado que funciona hermeticamente sem bibliotecas externas
   const svgQr = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><rect width="200" height="200" fill="%23ffffff"/><rect x="20" y="20" width="45" height="45" fill="%230f172a"/><rect x="28" y="28" width="29" height="29" fill="%23ffffff"/><rect x="35" y="35" width="15" height="15" fill="%230f172a"/><rect x="135" y="20" width="45" height="45" fill="%230f172a"/><rect x="143" y="28" width="29" height="29" fill="%23ffffff"/><rect x="150" y="35" width="15" height="15" fill="%230f172a"/><rect x="20" y="135" width="45" height="45" fill="%230f172a"/><rect x="28" y="143" width="29" height="29" fill="%23ffffff"/><rect x="35" y="150" width="15" height="15" fill="%230f172a"/><rect x="80" y="30" width="10" height="40" fill="%230f172a"/><rect x="100" y="20" width="15" height="15" fill="%230f172a"/><rect x="30" y="80" width="40" height="10" fill="%230f172a"/><rect x="85" y="85" width="30" height="30" fill="%23f59e0b"/><rect x="130" y="80" width="20" height="15" fill="%230f172a"/><rect x="160" y="100" width="15" height="30" fill="%230f172a"/><rect x="80" y="135" width="20" height="35" fill="%230f172a"/><rect x="120" y="140" width="35" height="10" fill="%230f172a"/><rect x="145" y="160" width="25" height="20" fill="%230f172a"/></svg>`;

@@ -38,7 +38,7 @@ export function matchCourier(identifier: string | undefined, couriers: User[]): 
 
   // 3. Busca por telefone
   const byPhone = couriers.find(
-    (c) => c.phone.replace(/\D/g, '') === clean.replace(/\D/g, '')
+    (c) => (c.phone ? c.phone.replace(/\D/g, '') : '') === clean.replace(/\D/g, '')
   );
   if (byPhone) return byPhone;
 
@@ -114,8 +114,10 @@ export async function processWebhookOrder(
         { latitude: geoPoint.latitude, longitude: geoPoint.longitude }
       );
 
-      distanceKm = route.distanceKm;
-      durationMinutes = route.durationMinutes;
+      if (route) {
+        distanceKm = route.distanceKm;
+        durationMinutes = route.durationMinutes;
+      }
 
       // Salva no cache
       onUpdateCache({
