@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { hashPassword, hashPin, sha256, generateRandomToken } from '../src/lib/crypto';
 
 const prisma = new PrismaClient();
@@ -34,14 +34,14 @@ export async function main() {
     where: { email: 'dono@hardbeerburguer.com.br' },
     update: {
       passwordHash: ownerPasswordHash,
-      role: UserRole.OWNER,
+      role: 'OWNER',
       active: true,
       storeId: store.id,
     },
     create: {
       email: 'dono@hardbeerburguer.com.br',
       passwordHash: ownerPasswordHash,
-      role: UserRole.OWNER,
+      role: 'OWNER',
       active: true,
       storeId: store.id,
     },
@@ -54,14 +54,14 @@ export async function main() {
     where: { email: 'operador@hardbeerburguer.com.br' },
     update: {
       passwordHash: operatorPasswordHash,
-      role: UserRole.OPERATOR,
+      role: 'OPERATOR',
       active: true,
       storeId: store.id,
     },
     create: {
       email: 'operador@hardbeerburguer.com.br',
       passwordHash: operatorPasswordHash,
-      role: UserRole.OPERATOR,
+      role: 'OPERATOR',
       active: true,
       storeId: store.id,
     },

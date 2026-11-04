@@ -4,19 +4,17 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LandingPage } from '@/src/components/LandingPage';
 
-export const dynamic = 'force-dynamic';
-
 export default function RootPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
+  // Demo e checkout não existem ainda. Enquanto isso, tudo leva ao login.
   const handleNavigateToDemo = () => {
-    router.push('/hardbeerburguer');
+    router.push('/login');
   };
 
-  const handleNavigateToCheckout = (plan?: 'ESSENCIAL' | 'PROFISSIONAL' | 'TURBO') => {
-    const selectedPlan = plan || 'PROFISSIONAL';
-    router.push(`/checkout?plan=${selectedPlan.toLowerCase()}`);
+  const handleNavigateToCheckout = (_plan?: 'ESSENCIAL' | 'PROFISSIONAL' | 'TURBO') => {
+    router.push('/login');
   };
 
   const handleToggleTheme = () => {

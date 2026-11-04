@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import React, { useState } from 'react';
 import {
   Bike,
@@ -100,22 +101,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-
-            <button
-              onClick={onNavigateToDemo}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap"
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
             >
-              <PlayCircle className="w-3.5 h-3.5 text-amber-500" />
-              <span>Ver Demonstração</span>
-            </button>
-
-            <button
-              onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('PROFISSIONAL') : onNavigateToDemo())}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-950 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 rounded-lg shadow-sm shadow-amber-500/20 transition-all whitespace-nowrap"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Assinar (7 Dias Grátis)</span>
-            </button>
+              Entrar
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </header>
@@ -138,40 +130,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
 
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('PROFISSIONAL') : onNavigateToDemo())}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
-              >
-                <Sparkles className="w-5 h-5" />
-                <span>Começar 7 Dias Grátis Agora</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
 
-              <button
-                onClick={onNavigateToDemo}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 text-sm"
-              >
-                <PlayCircle className="w-4 h-4 text-amber-500" />
-                <span>Testar Demonstração</span>
-              </button>
-
-              <button
-                onClick={() => handleScrollToSection('calculadora')}
-                className="w-full sm:w-auto px-5 py-3.5 rounded-xl font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm"
-              >
-                <Calculator className="w-4 h-4 text-amber-500" />
-                <span>Simular Economia</span>
-              </button>
-            </div>
-
-            <div className="pt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-              <span>Zero taxa por corrida</span>
-              <span aria-hidden="true">·</span>
-              <span>Roteamento viário OSRM configurável</span>
-              <span aria-hidden="true">·</span>
-              <span>Portal com código PIN para o Motoboy</span>
-              <span aria-hidden="true">·</span>
-              <span>Fechamento Pix em segundos</span>
             </div>
           </div>
         </div>
@@ -405,84 +364,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </li>
                 </ul>
               </div>
-              <button
-                onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('ESSENCIAL') : onNavigateToDemo())}
-                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors text-center"
-              >
-                Começar 7 Dias Grátis
-              </button>
             </div>
-
-            {/* Plano Profissional */}
-            <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-amber-500 shadow-md shadow-amber-500/10 flex flex-col justify-between relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 uppercase tracking-wider">
-                Mais Escolhido
-              </div>
-              <div>
-                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Operação Completa</span>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">Profissional</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono-numbers">R$ 50</span>
-                  <span className="text-xs text-slate-500">/mês</span>
-                </div>
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span><strong>Motoboys Ilimitados</strong></span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span><strong>Portal Exclusivo do Motoboy com PIN</strong></span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>Separação de Balcão e Operador com PIN</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>Exportação de relatórios em CSV</span>
-                  </li>
-                </ul>
-              </div>
-              <button
-                onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('PROFISSIONAL') : onNavigateToDemo())}
-                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl shadow-sm transition-all text-center"
-              >
-                Assinar Plano Profissional (7 Dias Grátis)
-              </button>
-            </div>
-
-            {/* Plano Turbo */}
-            <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
-              <div>
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alta Performance</span>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">Turbo</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono-numbers">R$ 70</span>
-                  <span className="text-xs text-slate-500">/mês</span>
-                </div>
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Tudo do plano Profissional</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Webhook de eventos</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Impressão térmica de comandas</span>
-                  </li>
-                </ul>
-              </div>
-              <button
-                onClick={() => (onNavigateToCheckout ? onNavigateToCheckout('TURBO') : onNavigateToDemo())}
-                className="mt-8 w-full py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors text-center"
-              >
-                Começar 7 Dias Grátis
-              </button>
-            </div>
+        
           </div>
         </div>
       </section>
