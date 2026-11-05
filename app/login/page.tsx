@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { Store, Lock, Mail, ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 
 function LoginForm() {
@@ -41,12 +41,25 @@ function LoginForm() {
       }
 
       // Login bem-sucedido: redireciona para callbackUrl ou início
-      if (callbackUrl && !callbackUrl.startsWith('/login')) {
+            // Login bem-sucedido: descobre a loja do usuário
+      const session = await getSession();
+      const slug = (session?.user as { storeSlug?: string } | undefined)?.storeSlug;
+
+      // Só aceita destino interno do próprio site
+      const destinoSeguro =
+        callbackUrl &&
+        callbackUrl.startsWith('/') &&
+        !callbackUrl.startsWith('//') &&
+        !callbackUrl.startsWith('/login');
+
+      if (destinoSeguro) {
         router.push(callbackUrl);
+      } else if (slug) {
+        router.push(`/${slug}`);
       } else {
         router.push('/');
-        router.refresh();
       }
+      router.refresh();
     } catch {
       setErrorMessage('Falha na comunicação com o servidor. Tente novamente.');
       setIsLoading(false);
