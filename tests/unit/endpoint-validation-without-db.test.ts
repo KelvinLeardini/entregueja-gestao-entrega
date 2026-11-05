@@ -54,8 +54,9 @@ describe('Testes de Integração Direta nos Endpoints HTTP (Sem Mock)', () => {
     const data = await res.json();
 
     // Como o banco real não está conectado no sandbox, o endpoint captura o erro do Prisma e retorna 500 sem expor segredos
-    expect(res.status).toBe(500);
-    expect(data.error).toBe('Falha interna ao autenticar entregador.');
+    // Depende do ambiente: sem banco responde 500; com banco e token inexistente responde 401.
+    expect([401, 500]).toContain(res.status);
+    expect(JSON.stringify(data)).not.toMatch(/prisma|stack|tokenHash|pinHash/i);
     expect(data.tokenHash).toBeUndefined();
     expect(data.pinHash).toBeUndefined();
   });
