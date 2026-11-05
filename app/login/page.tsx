@@ -35,7 +35,7 @@ function LoginForm() {
 
       if (!res || res.error) {
         // Mensagem genérica que não revela se o e-mail existe
-        setErrorMessage('Credenciais inválidas. Verifique seu e-mail e senha.');
+        setErrorMessage('E-mail ou senha incorretos.');
         setIsLoading(false);
         return;
       }

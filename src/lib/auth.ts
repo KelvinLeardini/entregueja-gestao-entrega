@@ -35,9 +35,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Limite de tentativas no login: bloqueio temporário após 5 falhas
+        // Conta bloqueada: responde igual a senha errada, sem revelar o bloqueio
         if (user.lockedUntil && user.lockedUntil > new Date()) {
-          throw new Error('Conta bloqueada temporariamente. Tente novamente mais tarde.');
+          await verifyPassword(password, user.passwordHash); // mantém o tempo de resposta parecido
+          return null;
         }
 
         const isValid = await verifyPassword(password, user.passwordHash);
