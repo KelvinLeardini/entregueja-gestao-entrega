@@ -22,9 +22,8 @@ enum DeliverySource {
 
 enum DeliveryStatus {
   PENDING
-  PREPARING
   ASSIGNED
-  OUT_FOR_DELIVERY
+  IN_TRANSIT
   DELIVERED
   CANCELLED
 }

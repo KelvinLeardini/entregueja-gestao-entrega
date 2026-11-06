@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
         deliveries: {
           where: {
             // Entregas ativas ou recentes
-            status: { in: ['ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED'] },
+            status: { in: ['ASSIGNED', 'IN_TRANSIT', 'DELIVERED'] },
           },
           orderBy: { createdAt: 'desc' },
           take: 50,
